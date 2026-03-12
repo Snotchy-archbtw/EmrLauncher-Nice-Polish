@@ -1,10 +1,10 @@
-# Emerald Legacy Launcher
+<div align="center">
+  <img height="150" src="https://raw.githubusercontent.com/Emerald-Legacy-Launcher/Emerald-Legacy-Launcher/refs/heads/main/public/images/logo.png">
+  <h1>Emerald Legacy Launcher</h1>
+  <p>FOSS cross-platform launcher for Minecraft Legacy Console Edition</p>
+</div>
 
-**A free and open-source Minecraft Legacy Console Edition launcher, built with Rust and Tauri.**
-
----
-
-<p align="left">
+<p align="center">
   <a href="https://ko-fi.com/kayjann">
     <img src="https://img.shields.io/badge/ko--fi-Donate%20to%20the%20Project-grey?style=for-the-badge&logo=kofi&logoColor=white&labelColor=FF5E5B" alt="Donate to the Project">
   </a>
@@ -21,10 +21,13 @@
 
 ---
 
+<img width="1355" height="922" alt="image" src="https://github.com/user-attachments/assets/6798dd00-4c7c-4b57-9116-7648ce90ae93" />
+
+
 ### PROJECT OVERVIEW
 Emerald Legacy Launcher started as a solo project to create a better way to play Legacy Console Edition. Over time, other developers joined the effort, bringing expertise from various preservation projects into one place. 
 
-**Our Philosophy:** For too long, the LCE scene has been fragmented across different, often resource-heavy launchers. Emerald was built to stop this fragmentation and centralize everything into a single, definitive hub. By avoiding bloated frameworks and utilizing a modern Rust/Tauri stack, we deliver a high-performance, cross-platform experience that uses only ~15MB of RAM—leaving all your PC's resources dedicated to the game itself.
+**Our Philosophy:** For too long, the LCE scene has been fragmented across different, often resource-heavy launchers. Emerald was built to stop this fragmentation and centralize everything into a single, definitive hub. By avoiding bloated frameworks and utilizing a modern Rust/Tauri stack, we deliver a high-performance, cross-platform experience that uses only ~15MB of RAM, leaving all your PC's resources dedicated to the game itself.
 
 ---
 
@@ -68,8 +71,4 @@ Click the heading above to track progress, view active tasks, and see upcoming l
 
 ---
 
-
-
----
-
-***This project is licensed under the GNU GPL v3 License - see the LICENSE file for details.*** 
+***This project is licensed under the [GNU GPL v3 License](LICENSE)*** 
