@@ -1,7 +1,7 @@
 name: 'nightly'
 on:
   push:
-    branches: ["dev"]
+    branches: ["main"]
 
 jobs:
   nightly-tauri:
