@@ -26,8 +26,3 @@ Thumbs.db
 
 # Log files
 *.log
-
-/build-flatpak
-/.flatpak-builder
-/*.flatpak
-/emerald-repo
