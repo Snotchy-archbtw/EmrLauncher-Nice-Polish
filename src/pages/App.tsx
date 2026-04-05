@@ -11,7 +11,6 @@ import SkinViewer from "../components/common/SkinViewer";
 import TeamModal from "../components/modals/TeamModal";
 import PanoramaBackground from "../components/common/PanoramaBackground";
 import { ClickParticles } from "../components/common/ClickParticles";
-import { AppHeader } from "../components/layout/AppHeader";
 import { DownloadOverlay } from "../components/layout/DownloadOverlay";
 import { AchievementToast } from "../components/common/AchievementToast";
 import {
@@ -21,10 +20,8 @@ import {
   useGame,
   useSkin,
 } from "../context/LauncherContext";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { TauriService } from "../services/TauriService";
 import pkg from "../../package.json";
-const appWindow = getCurrentWindow();
 
 export default function App() {
   const {
@@ -72,7 +69,6 @@ export default function App() {
   }, [config.isLoaded]);
 
   useEffect(() => {
-    appWindow.show();
     setTimeout(() => setShowIntro(false), 2400);
     setTimeout(() => setLogoAnimDone(true), 3400);
   }, [showSetup]);
@@ -100,7 +96,6 @@ export default function App() {
   return (
     <MotionConfig transition={config.animationsEnabled ? {} : { duration: 0 }}>
       <div
-        data-tauri-drag-region
         className={`w-screen h-screen overflow-hidden select-none flex flex-col relative bg-black text-white font-['Mojangles'] outline-none focus:outline-none ${!config.animationsEnabled ? "no-animations" : ""}`}
       >
         <style>{`
@@ -198,21 +193,12 @@ export default function App() {
             >
               <AnimatePresence>
                 {logoAnimDone && (
-                  <AppHeader
-                    playClickSound={audio.playClickSound}
-                    uiFade={uiFade}
-                  />
-                )}
-              </AnimatePresence>
-
-              <AnimatePresence>
-                {logoAnimDone && (
                   <>
                     {!config.legacyMode && (
                       <motion.div
                         key="hideBtn"
                         {...uiFade}
-                        className="absolute top-14 left-8 z-50"
+                        className="absolute top-4 left-8 z-50"
                       >
                         <button
                           onClick={() => {
@@ -267,10 +253,7 @@ export default function App() {
                 )}
               </AnimatePresence>
 
-              <div
-                data-tauri-drag-region
-                className="shrink-0 flex justify-center py-4 relative w-full pt-12"
-              >
+              <div className="shrink-0 flex justify-center py-4 relative w-full pt-4">
                 <div className="relative w-full max-w-135 flex justify-center">
                   <motion.img
                     layoutId="mainLogo"
@@ -293,7 +276,6 @@ export default function App() {
                         >
                           <div
                             onClick={audio.cycleSplash}
-                            data-tauri-no-drag
                             className="mc-splash text-[#FFFF55] text-[28px] z-100 cursor-pointer whitespace-nowrap"
                             style={{ textShadow: "2px 2px 0px #3F3F00" }}
                           >

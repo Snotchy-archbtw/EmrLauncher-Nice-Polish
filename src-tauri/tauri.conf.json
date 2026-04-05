@@ -18,8 +18,8 @@
         "height": 720,
         "minWidth": 1280,
         "minHeight": 720,
-        "decorations": false,
-        "transparent": true,
+        "decorations": true,
+        "transparent": false,
         "resizable": true,
         "center": true,
         "visible": false
