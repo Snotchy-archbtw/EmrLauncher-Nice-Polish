@@ -42,7 +42,7 @@ const BASE_EDITIONS = [
 const PARTNERSHIP_SERVERS = [
   {
     name: "Kowhaifans Clubhouse",
-    ip: "kowhaifan.ddns.net",
+    ip: "lce.kowhaifan.net",
     port: 25565,
   },
 ];
