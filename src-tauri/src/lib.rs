@@ -651,13 +651,25 @@ async fn download_and_install(app: AppHandle, state: State<'_, DownloadState>, u
     if !instance_dir.exists() {
         fs::create_dir_all(&instance_dir).map_err(|e| e.to_string())?;
     } else {
+        let workshop_files: std::collections::HashSet<String> = {
+            let wf_path = instance_dir.join("workshop_files.json");
+            fs::read_to_string(&wf_path)
+                .ok()
+                .and_then(|s| serde_json::from_str::<Vec<String>>(&s).ok())
+                .unwrap_or_default()
+                .into_iter()
+                .collect()
+        };
+
         if let Ok(entries) = fs::read_dir(&instance_dir) {
             for entry in entries.flatten() {
                 let file_name = entry.file_name();
                 let name_str = file_name.to_string_lossy();
 
-                let keep_list = ["Windows64", "Windows64Media", "uid.dat", "username.txt", "settings.dat", "servers.dat", "servers.txt", "server.properties", "Common", "options.txt", "servers.db"];
-                if !keep_list.contains(&name_str.as_ref()) {
+                let keep_list = ["Windows64", "Windows64Media", "uid.dat", "username.txt", "settings.dat", "servers.dat", "servers.txt", "server.properties", "Common", "options.txt", "servers.db", "workshop_files.json"];
+                let entry_path_str = entry.path().to_string_lossy().to_string();
+                let is_workshop_file = workshop_files.iter().any(|wf| entry_path_str.starts_with(wf) || wf.starts_with(&entry_path_str));
+                if !keep_list.contains(&name_str.as_ref()) && !is_workshop_file {
                     let path = entry.path();
                     if path.is_dir() {
                         let _ = fs::remove_dir_all(path);
@@ -919,6 +931,94 @@ async fn sync_dlc(app: AppHandle, instance_id: String) -> Result<(), String> {
     let root = get_app_dir(&app);
     let instance_dir = root.join("instances").join(&instance_id);
     perform_dlc_sync(&app, &instance_dir)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WorkshopInstallRequest {
+    instance_id: String,
+    zips: std::collections::HashMap<String, String>,
+    package_id: String,
+}
+
+#[tauri::command]
+async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Result<(), String> {
+    let root = get_app_dir(&app);
+    let instance_dir = root.join("instances").join(&request.instance_id);
+    if !instance_dir.exists() {
+        return Err("Instance not installed".into());
+    }
+
+    let media_dir   = instance_dir.join("Windows64Media");
+    let dlc_dir     = media_dir.join("DLC");
+    let game_hdd    = instance_dir.join("Windows64").join("GameHDD");
+    let mob_dir     = instance_dir.join("Common").join("res").join("mob");
+    let wf_path = instance_dir.join("workshop_files.json");
+    let mut workshop_files: Vec<String> = fs::read_to_string(&wf_path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+
+    let raw_base = format!("https://raw.githubusercontent.com/Emerald-Legacy-Launcher/Workshop/refs/heads/main/{}", request.package_id);
+    let tmp_dir = root.join(format!("workshop_tmp_{}", request.package_id));
+    fs::create_dir_all(&tmp_dir).map_err(|e| e.to_string())?;
+    for (zip_name, placeholder) in &request.zips {
+        let zip_url = format!("{}/{}", raw_base, zip_name);
+        let zip_tmp = tmp_dir.join(zip_name);
+        let response = reqwest::get(&zip_url).await.map_err(|e| e.to_string())?;
+        if !response.status().is_success() {
+            let _ = fs::remove_dir_all(&tmp_dir);
+            return Err(format!("Failed to download {}: HTTP {}", zip_name, response.status()));
+        }
+        let bytes = response.bytes().await.map_err(|e| e.to_string())?;
+        fs::write(&zip_tmp, &bytes).map_err(|e| e.to_string())?;
+        let dest_dir = if placeholder.is_empty() {
+            instance_dir.clone()
+        } else {
+            let resolved = placeholder
+                .replace("{MediaDir}", media_dir.to_str().unwrap_or(""))
+                .replace("{DLCDir}",   dlc_dir.to_str().unwrap_or(""))
+                .replace("{GameHDD}",  game_hdd.to_str().unwrap_or(""))
+                .replace("{MobDir}",   mob_dir.to_str().unwrap_or(""));
+            PathBuf::from(resolved)
+        };
+
+        fs::create_dir_all(&dest_dir).map_err(|e| e.to_string())?;
+        #[cfg(target_os = "linux")]
+        {
+            let status = Command::new("unzip")
+                .args(["-o", "-q", zip_tmp.to_str().unwrap(), "-d", dest_dir.to_str().unwrap()])
+                .status()
+                .map_err(|e| e.to_string())?;
+            if !status.success() {
+                let _ = fs::remove_dir_all(&tmp_dir);
+                return Err(format!("Extraction failed for {}", zip_name));
+            }
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let status = Command::new("tar")
+                .args(["-xf", zip_tmp.to_str().unwrap(), "-C", dest_dir.to_str().unwrap()])
+                .status()
+                .map_err(|e| e.to_string())?;
+            if !status.success() {
+                let _ = fs::remove_dir_all(&tmp_dir);
+                return Err(format!("Extraction failed for {}", zip_name));
+            }
+        }
+
+        let dest_str = dest_dir.to_string_lossy().to_string();
+        if !workshop_files.contains(&dest_str) {
+            workshop_files.push(dest_str);
+        }
+    }
+
+    let _ = fs::remove_dir_all(&tmp_dir);
+    if let Ok(json) = serde_json::to_string(&workshop_files) {
+        let _ = fs::write(&wf_path, json);
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -1205,7 +1305,7 @@ pub fn run() {
         .plugin(tauri_plugin_gamepad::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_drpc::init())
-        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, update_tray_icon, sync_dlc, fetch_skin])
+        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, update_tray_icon, sync_dlc, fetch_skin, workshop_install])
         .setup(|app| {
             let config = load_config(app.handle().clone());
             let visible = config.enable_tray_icon.unwrap_or(true);

@@ -126,6 +126,10 @@ export class TauriService {
     return invoke("sync_dlc", { instanceId });
   }
 
+  static async workshopInstall(instanceId: string, packageId: string, zips: Record<string, string>): Promise<void> {
+    return invoke("workshop_install", { request: { instanceId, packageId, zips } });
+  }
+
   static async updateTrayIcon(visible: boolean): Promise<void> {
     return invoke("update_tray_icon", { visible });
   }
