@@ -171,10 +171,10 @@ const WorkshopView = memo(function WorkshopView() {
       transition={{ duration: config.animationsEnabled ? 0.3 : 0 }}
       className="flex flex-col items-center w-full max-w-5xl relative font-['Mojangles'] text-white select-none outline-none focus:outline-none"
     >
-      <div
-        className="absolute inset-0 -z-10 bg-cover bg-center"
+      {/*<div
+        className="absolute inset-0 -z-10 bg-cover h-screen"
         style={{ backgroundImage: "url('/images/background.png')", imageRendering: 'pixelated' }}
-      />
+      />*/}
 
       <div className="w-[95%] flex flex-col items-center mt-6">
         <div className="w-full flex items-end justify-between">
@@ -204,6 +204,7 @@ const WorkshopView = memo(function WorkshopView() {
               );
             })}
           </div>
+
           {!isSearchTab && (
             <span className="text-[#A0A0A0] text-sm uppercase tracking-widest mc-text-shadow mb-1 mr-1">
               Entries: {loading ? '...' : filteredItems.length}
@@ -211,7 +212,7 @@ const WorkshopView = memo(function WorkshopView() {
           )}
         </div>
       </div>
-
+      <div className="p-2"></div>
       <div
         className="w-[95%] flex-1 relative overflow-hidden"
         style={{
@@ -234,9 +235,6 @@ const WorkshopView = memo(function WorkshopView() {
                 <div
                   className="flex items-center flex-1 h-10 px-4"
                   style={{
-                    backgroundImage: "url('/images/frame_background.png')",
-                    backgroundSize: '100% 100%',
-                    imageRendering: 'pixelated',
                     filter: 'brightness(0.8)',
                   }}
                 >
@@ -248,7 +246,7 @@ const WorkshopView = memo(function WorkshopView() {
                     placeholder="Search all workshop entries..."
                     spellCheck={false}
                     autoFocus
-                    className="bg-transparent border-none outline-none text-white text-base mc-text-shadow w-full placeholder-[#555] font-['Mojangles']"
+                    className="bg-transparent border-none outline-none text-white text-base mc-text-shadow w-full placeholder-white font-['Mojangles']"
                   />
                   {search && (
                     <button
@@ -260,7 +258,7 @@ const WorkshopView = memo(function WorkshopView() {
                   )}
                 </div>
                 <span className="text-[#A0A0A0] text-sm mc-text-shadow whitespace-nowrap">
-                  {search.trim() ? `${filteredItems.length} result${filteredItems.length !== 1 ? 's' : ''}` : 'Type to search'}
+                  {search.trim() ? `${filteredItems.length} result${filteredItems.length !== 1 ? 's' : ''}` : ''}
                 </span>
               </div>
 
@@ -409,7 +407,7 @@ function PackageModal({ pkg, onClose, playPressSound }: {
   const [showInstall, setShowInstall] = useState(false);
 
   useEffect(() => {
-    if (showInstall) return; // let install modal handle keys
+    if (showInstall) return; //neo: let install modal handle keys
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Backspace') {
         onClose();
@@ -553,7 +551,7 @@ function InstallModal({ pkg, onClose, playPressSound }: {
         if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'Enter') onClose();
         return;
       }
-      
+
       if (e.key === 'Escape' || e.key === 'Backspace') {
         onClose();
       } else if (e.key === 'ArrowUp') {
