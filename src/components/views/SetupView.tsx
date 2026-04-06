@@ -14,16 +14,12 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
     username, setUsername,
     setHasCompletedSetup,
     profile,
-    setEnableTrayIcon: setConfigTray,
     setVfxEnabled: setConfigVfx,
     setRpcEnabled: setConfigRpc,
-    setKeepLauncherOpen: setConfigKeepOpen,
     setLinuxRunner,
     linuxRunner: configLinuxRunner,
     vfxEnabled: configVfx,
-    enableTrayIcon: configTray,
     rpcEnabled: configRpc,
-    keepLauncherOpen: configKeepOpen
   } = useConfig();
   const { playPressSound, playSfx } = useAudio();
 
@@ -39,10 +35,8 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
   const [setupProgress, setSetupProgress] = useState<{ stage: string; message: string; percent?: number } | null>(null);
   const [runtimeAlreadyInstalled, setRuntimeAlreadyInstalled] = useState(false);
 
-  const [enableTrayIcon, setEnableTrayIcon] = useState(configTray);
   const [enableVfx, setEnableVfx] = useState(configVfx);
   const [enableDiscordRPC, setEnableDiscordRPC] = useState(configRpc);
-  const [keepLauncherOpen, setKeepLauncherOpen] = useState(configKeepOpen);
 
   const totalSteps = isLinux ? 4 : 4;
 
@@ -121,10 +115,8 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
       setCurrentStep(2);
       setFocusIndex(0);
     } else if (currentStep === 2) {
-      setConfigTray(enableTrayIcon);
       setConfigVfx(enableVfx);
       setConfigRpc(enableDiscordRPC);
-      setConfigKeepOpen(keepLauncherOpen);
 
       setCurrentStep(3);
       setFocusIndex(0);
@@ -152,7 +144,7 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
         if (isLinux) count = runners.length + 2; // Runners, Back, Next
         else if (isMac) count = 3; // Install, Back, Next
         else count = 2; // Back, Next
-      } else if (currentStep === 2) count = 6; // 4 Toggles, Back, Next
+      } else if (currentStep === 2) count = 4; // 2 Toggles, Back, Next
       else if (currentStep === 3) count = 2; // Back, Finish
 
       if (e.key === "ArrowDown" || e.key === "Tab") {
@@ -180,12 +172,10 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
             else if (focusIndex === 1) handleNext();
           }
         } else if (currentStep === 2) {
-          if (focusIndex === 0) { setEnableTrayIcon(!enableTrayIcon); playPressSound(); }
-          else if (focusIndex === 1) { setEnableVfx(!enableVfx); playPressSound(); }
-          else if (focusIndex === 2) { setEnableDiscordRPC(!enableDiscordRPC); playPressSound(); }
-          else if (focusIndex === 3) { setKeepLauncherOpen(!keepLauncherOpen); playPressSound(); }
-          else if (focusIndex === 4) handleBack();
-          else if (focusIndex === 5) handleNext();
+          if (focusIndex === 0) { setEnableVfx(!enableVfx); playPressSound(); }
+          else if (focusIndex === 1) { setEnableDiscordRPC(!enableDiscordRPC); playPressSound(); }
+          else if (focusIndex === 2) handleBack();
+          else if (focusIndex === 3) handleNext();
         } else if (currentStep === 3) {
           if (focusIndex === 0) handleBack();
           else if (focusIndex === 1) handleNext();
@@ -194,7 +184,7 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [currentStep, focusIndex, runners, enableTrayIcon, enableVfx, enableDiscordRPC, keepLauncherOpen, isLinux, isMac, tempUsername]);
+  }, [currentStep, focusIndex, runners, enableVfx, enableDiscordRPC, isLinux, isMac, tempUsername]);
 
   const handleMacosSetup = async () => {
     playPressSound();
@@ -439,30 +429,6 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                           <div className="bg-black/50 border-2 border-white/20 p-4">
                             <div className="flex items-center justify-between">
                               <div className="text-left">
-                                <p className="text-white font-bold">System Tray Icon</p>
-                                <p className="text-xs text-white/60">Keep launcher accessible in system tray</p>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  playPressSound();
-                                  setEnableTrayIcon(!enableTrayIcon);
-                                }}
-                                onMouseEnter={() => setFocusIndex(0)}
-                                className={`w-12 h-6 outline-none border-none bg-transparent transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(250,204,21,0.3)] ${focusIndex === 0 ? "scale-110 shadow-[0_0_8px_rgba(250,204,21,0.6)]" : ""}`}
-                                style={{ imageRendering: "pixelated" }}
-                              >
-                                <img
-                                  src={enableTrayIcon ? "/images/Toggle_Switch_On.png" : "/images/Toggle_Switch_Off.png"}
-                                  alt="Toggle"
-                                  className="w-full h-full object-contain"
-                                />
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="bg-black/50 border-2 border-white/20 p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="text-left">
                                 <p className="text-white font-bold">Visual Effects</p>
                                 <p className="text-xs text-white/60">Click particles and animations</p>
                               </div>
@@ -471,8 +437,8 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                                   playPressSound();
                                   setEnableVfx(!enableVfx);
                                 }}
-                                onMouseEnter={() => setFocusIndex(1)}
-                                className={`w-12 h-6 outline-none border-none bg-transparent transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(250,204,21,0.3)] ${focusIndex === 1 ? "scale-110 shadow-[0_0_8px_rgba(250,204,21,0.6)]" : ""}`}
+                                onMouseEnter={() => setFocusIndex(0)}
+                                className={`w-12 h-6 outline-none border-none bg-transparent transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(250,204,21,0.3)] ${focusIndex === 0 ? "scale-110 shadow-[0_0_8px_rgba(250,204,21,0.6)]" : ""}`}
                                 style={{ imageRendering: "pixelated" }}
                               >
                                 <img
@@ -495,36 +461,12 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                                   playPressSound();
                                   setEnableDiscordRPC(!enableDiscordRPC);
                                 }}
-                                onMouseEnter={() => setFocusIndex(2)}
-                                className={`w-12 h-6 outline-none border-none bg-transparent transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(250,204,21,0.3)] ${focusIndex === 2 ? "scale-110 shadow-[0_0_8px_rgba(250,204,21,0.6)]" : ""}`}
+                                onMouseEnter={() => setFocusIndex(1)}
+                                className={`w-12 h-6 outline-none border-none bg-transparent transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(250,204,21,0.3)] ${focusIndex === 1 ? "scale-110 shadow-[0_0_8px_rgba(250,204,21,0.6)]" : ""}`}
                                 style={{ imageRendering: "pixelated" }}
                               >
                                 <img
                                   src={enableDiscordRPC ? "/images/Toggle_Switch_On.png" : "/images/Toggle_Switch_Off.png"}
-                                  alt="Toggle"
-                                  className="w-full h-full object-contain"
-                                />
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="bg-black/50 border-2 border-white/20 p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="text-left">
-                                <p className="text-white font-bold">Keep Launcher Open</p>
-                                <p className="text-xs text-white/60">Keep launcher running after game launch</p>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  playPressSound();
-                                  setKeepLauncherOpen(!keepLauncherOpen);
-                                }}
-                                onMouseEnter={() => setFocusIndex(3)}
-                                className={`w-12 h-6 outline-none border-none bg-transparent transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(250,204,21,0.3)] ${focusIndex === 3 ? "scale-110 shadow-[0_0_8px_rgba(250,204,21,0.6)]" : ""}`}
-                                style={{ imageRendering: "pixelated" }}
-                              >
-                                <img
-                                  src={keepLauncherOpen ? "/images/Toggle_Switch_On.png" : "/images/Toggle_Switch_Off.png"}
                                   alt="Toggle"
                                   className="w-full h-full object-contain"
                                 />
@@ -559,10 +501,8 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                             <div className="mt-2 pt-2 border-t border-white/20">
                               <p className="text-white text-sm">Customization:</p>
                               <div className="flex flex-wrap gap-2 mt-1">
-                                {enableTrayIcon && <span className="text-xs bg-green-600/30 px-2 py-1 border border-green-400">Tray Icon</span>}
                                 {enableVfx && <span className="text-xs bg-green-600/30 px-2 py-1 border border-green-400">Visual Effects</span>}
                                 {enableDiscordRPC && <span className="text-xs bg-green-600/30 px-2 py-1 border border-green-400">Discord RPC</span>}
-                                {keepLauncherOpen && <span className="text-xs bg-green-600/30 px-2 py-1 border border-green-400">Keep Open</span>}
                               </div>
                             </div>
                           </div>

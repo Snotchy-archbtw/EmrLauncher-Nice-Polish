@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { TauriService } from "../services/TauriService";
 
@@ -14,8 +14,6 @@ export function useAppConfig() {
   const [isDayTime, setIsDayTime] = useLocalStorage("lce-daytime", true);
   const [profile, setProfile] = useLocalStorage("lce-profile", "legacy_evolved");
   const [legacyMode, setLegacyMode] = useLocalStorage("lce-legacy-mode", false);
-  const [keepLauncherOpen, setKeepLauncherOpen] = useLocalStorage("lce-keep-open", false);
-  const [enableTrayIcon, setEnableTrayIcon] = useLocalStorage("lce-tray-icon", true);
   const [hasCompletedSetup, setHasCompletedSetup] = useLocalStorage("lce-setup-completed", false);
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -32,8 +30,6 @@ export function useAppConfig() {
         setPerfBoost(config.appleSiliconPerformanceBoost);
       if (config.customEditions) setCustomEditions(config.customEditions);
       if (config.profile) setProfile(config.profile);
-      if (config.keepLauncherOpen !== undefined) setKeepLauncherOpen(config.keepLauncherOpen);
-      if (config.enableTrayIcon !== undefined) setEnableTrayIcon(config.enableTrayIcon);
       if (config.vfxEnabled !== undefined) setVfxEnabled(config.vfxEnabled);
       if (config.animationsEnabled !== undefined) setAnimationsEnabled(config.animationsEnabled);
       if (config.rpcEnabled !== undefined) setRpcEnabled(config.rpcEnabled);
@@ -46,29 +42,22 @@ export function useAppConfig() {
 
   useEffect(() => {
     if (isLoaded) {
-      TauriService.updateTrayIcon(enableTrayIcon);
+      TauriService.saveConfig({
+        username,
+        themeStyleId: theme,
+        linuxRunner,
+        appleSiliconPerformanceBoost: perfBoost,
+        profile,
+        customEditions,
+        animationsEnabled,
+        vfxEnabled,
+        rpcEnabled,
+        musicVol,
+        sfxVol,
+        legacyMode,
+      }).catch(console.error);
     }
-  }, [enableTrayIcon, isLoaded]);
-
-  const saveConfig = useCallback((skinBase64?: string | null) => {
-    TauriService.saveConfig({
-      username,
-      skinBase64: skinBase64 || undefined,
-      themeStyleId: theme,
-      linuxRunner,
-      appleSiliconPerformanceBoost: perfBoost,
-      profile,
-      customEditions,
-      keepLauncherOpen,
-      enableTrayIcon,
-      animationsEnabled,
-      vfxEnabled,
-      rpcEnabled,
-      musicVol,
-      sfxVol,
-      legacyMode,
-    }).catch(console.error);
-  }, [username, theme, linuxRunner, perfBoost, profile, customEditions, keepLauncherOpen, enableTrayIcon, animationsEnabled, vfxEnabled, rpcEnabled, musicVol, sfxVol, legacyMode]);
+  }, [username, theme, linuxRunner, perfBoost, profile, customEditions, animationsEnabled, vfxEnabled, rpcEnabled, musicVol, sfxVol, legacyMode, isLoaded]);
 
   return {
     username,
@@ -91,10 +80,6 @@ export function useAppConfig() {
     setIsDayTime,
     legacyMode,
     setLegacyMode,
-    keepLauncherOpen,
-    setKeepLauncherOpen,
-    enableTrayIcon,
-    setEnableTrayIcon,
     profile,
     setProfile,
     linuxRunner,
@@ -106,6 +91,5 @@ export function useAppConfig() {
     isLoaded,
     hasCompletedSetup,
     setHasCompletedSetup,
-    saveConfig,
   };
 }

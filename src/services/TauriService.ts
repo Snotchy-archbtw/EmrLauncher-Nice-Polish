@@ -30,8 +30,6 @@ export interface AppConfig {
   appleSiliconPerformanceBoost?: boolean;
   customEditions?: CustomEdition[];
   profile?: string;
-  keepLauncherOpen?: boolean;
-  enableTrayIcon?: boolean;
   animationsEnabled?: boolean;
   vfxEnabled?: boolean;
   rpcEnabled?: boolean;
@@ -128,10 +126,6 @@ export class TauriService {
 
   static async workshopInstall(instanceId: string, packageId: string, zips: Record<string, string>): Promise<void> {
     return invoke("workshop_install", { request: { instanceId, packageId, zips } });
-  }
-
-  static async updateTrayIcon(visible: boolean): Promise<void> {
-    return invoke("update_tray_icon", { visible });
   }
 
   static onDownloadProgress(callback: (percent: number) => void) {

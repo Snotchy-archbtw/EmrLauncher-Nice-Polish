@@ -52,7 +52,6 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     setProfile: configRaw.setProfile,
     customEditions: configRaw.customEditions,
     setCustomEditions: configRaw.setCustomEditions,
-    keepLauncherOpen: configRaw.keepLauncherOpen,
   });
   const skinSync = useSkinSync({ profile: configRaw.profile, editions: gameRaw.editions });
   const audioRaw = useAudioController({
@@ -67,8 +66,7 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     configRaw.username, configRaw.theme, configRaw.layout, configRaw.vfxEnabled,
     configRaw.rpcEnabled, configRaw.musicVol, configRaw.sfxVol, configRaw.isDayTime,
     configRaw.profile, configRaw.linuxRunner, configRaw.perfBoost, configRaw.customEditions,
-    configRaw.legacyMode, configRaw.keepLauncherOpen, configRaw.enableTrayIcon,
-    configRaw.animationsEnabled
+    configRaw.legacyMode, configRaw.animationsEnabled
   ]);
 
   const game = useMemo(() => gameRaw, [
@@ -113,12 +111,26 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (config.isLoaded) {
-      config.saveConfig(skinSync.skinBase64);
+      TauriService.saveConfig({
+        username: config.username,
+        skinBase64: skinSync.skinBase64 || undefined,
+        themeStyleId: config.theme,
+        linuxRunner: config.linuxRunner,
+        appleSiliconPerformanceBoost: config.perfBoost,
+        profile: config.profile,
+        customEditions: config.customEditions,
+        animationsEnabled: config.animationsEnabled,
+        vfxEnabled: config.vfxEnabled,
+        rpcEnabled: config.rpcEnabled,
+        musicVol: config.musicVol,
+        sfxVol: config.sfxVol,
+        legacyMode: config.legacyMode,
+      }).catch(console.error);
     }
   }, [
     config.username, skinSync.skinBase64, config.theme, config.linuxRunner,
-    config.perfBoost, config.customEditions, config.profile, config.keepLauncherOpen,
-    config.enableTrayIcon, config.vfxEnabled, config.animationsEnabled,
+    config.perfBoost, config.customEditions, config.profile,
+    config.vfxEnabled, config.animationsEnabled,
     config.rpcEnabled, config.musicVol, config.sfxVol, config.legacyMode, config.isLoaded
   ]);
 

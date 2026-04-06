@@ -7,8 +7,6 @@ use std::process::Command;
 use std::process::Stdio;
 
 use tauri::{AppHandle, Emitter, State, Manager};
-use tauri::menu::{Menu, MenuItem, MenuEvent};
-use tauri::tray::{TrayIcon, TrayIconBuilder, TrayIconEvent};
 use futures_util::StreamExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -51,8 +49,6 @@ pub struct AppConfig {
     pub apple_silicon_performance_boost: Option<bool>,
     pub custom_editions: Option<Vec<CustomEdition>>,
     pub profile: Option<String>,
-    pub keep_launcher_open: Option<bool>,
-    pub enable_tray_icon: Option<bool>,
     pub animations_enabled: Option<bool>,
     pub vfx_enabled: Option<bool>,
     pub rpc_enabled: Option<bool>,
@@ -189,8 +185,6 @@ fn load_config(app: AppHandle) -> AppConfig {
         apple_silicon_performance_boost: None,
         custom_editions: None,
         profile: Some("legacy_evolved".into()),
-        keep_launcher_open: None,
-        enable_tray_icon: Some(true),
         animations_enabled: Some(true),
         vfx_enabled: Some(true),
         rpc_enabled: Some(true),
@@ -1263,13 +1257,6 @@ async fn stop_game(#[allow(unused_variables)] app: AppHandle, #[allow(unused_var
 }
 
 #[tauri::command]
-fn update_tray_icon(app: AppHandle, visible: bool) {
-    if let Some(tray) = app.tray_by_id("main") {
-        let _ = tray.set_visible(visible);
-    }
-}
-
-#[tauri::command]
 async fn fetch_skin(username: String) -> Result<(String, String), String> {
     let client = reqwest::Client::new();
     let mojang_url = format!("https://api.mojang.com/users/profiles/minecraft/{}", username);
@@ -1305,57 +1292,7 @@ pub fn run() {
         .plugin(tauri_plugin_gamepad::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_drpc::init())
-        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, update_tray_icon, sync_dlc, fetch_skin, workshop_install])
-        .setup(|app| {
-            let config = load_config(app.handle().clone());
-            let visible = config.enable_tray_icon.unwrap_or(true);
-
-            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
-
-            let tray = TrayIconBuilder::with_id("main")
-                .icon(tauri::image::Image::from_bytes(include_bytes!("../icons/32x32.png")).unwrap())
-                .tooltip("Emerald Legacy Launcher")
-                .menu(&menu)
-                .on_menu_event(|app: &AppHandle, event: MenuEvent| {
-                    match event.id.as_ref() {
-                        "quit" => {
-                            app.exit(0);
-                        }
-                        "show" => {
-                            if let Some(window) = app.get_webview_window("main") {
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        }
-                        _ => {}
-                    }
-                })
-                .on_tray_icon_event(|tray: &TrayIcon, event: TrayIconEvent| {
-                    if let TrayIconEvent::Click { button: tauri::tray::MouseButton::Left, .. } = event {
-                        let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
-                    }
-                })
-                .build(app)?;
-
-            let _ = tray.set_visible(visible);
-
-            Ok(())
-        })
-        .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                let config = load_config(window.app_handle().clone());
-                if config.enable_tray_icon.unwrap_or(true) {
-                    api.prevent_close();
-                    let _ = window.hide();
-                }
-            }
-        })
+        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, sync_dlc, fetch_skin, workshop_install])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

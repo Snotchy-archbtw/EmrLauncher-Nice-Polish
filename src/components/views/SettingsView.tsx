@@ -6,7 +6,7 @@ import { useUI, useConfig, useAudio, useGame } from "../../context/LauncherConte
 
 const SettingsView = memo(function SettingsView() {
   const { setActiveView } = useUI();
-  const { vfxEnabled, setVfxEnabled, animationsEnabled, setAnimationsEnabled, musicVol: musicVolume, setMusicVol: setMusicVolume, sfxVol: sfxVolume, setSfxVol: setSfxVolume, layout, setLayout, linuxRunner, setLinuxRunner, perfBoost, setPerfBoost, rpcEnabled, setRpcEnabled, legacyMode, setLegacyMode, keepLauncherOpen, setKeepLauncherOpen, enableTrayIcon, setEnableTrayIcon } = useConfig();
+  const { vfxEnabled, setVfxEnabled, animationsEnabled, setAnimationsEnabled, musicVol: musicVolume, setMusicVol: setMusicVolume, sfxVol: sfxVolume, setSfxVol: setSfxVolume, layout, setLayout, linuxRunner, setLinuxRunner, perfBoost, setPerfBoost, rpcEnabled, setRpcEnabled, legacyMode, setLegacyMode } = useConfig();
   const { currentTrack, setCurrentTrack, tracks, playPressSound, playBackSound } = useAudio();
   const { isGameRunning, stopGame, isRunnerDownloading, runnerDownloadProgress, downloadRunner } = useGame();
   const { isLinux, isMac } = usePlatform();
@@ -51,16 +51,6 @@ const SettingsView = memo(function SettingsView() {
   const handleLegacyToggle = () => {
     playPressSound();
     setLegacyMode(!legacyMode);
-  };
-
-  const handleKeepOpenToggle = () => {
-    playPressSound();
-    setKeepLauncherOpen(!keepLauncherOpen);
-  };
-
-  const handleTrayToggle = () => {
-    playPressSound();
-    setEnableTrayIcon(!enableTrayIcon);
   };
 
   const handleRunnerToggle = () => {
@@ -291,19 +281,6 @@ const SettingsView = memo(function SettingsView() {
         type: "button",
         onClick: handleLegacyToggle,
       });
-      items.push({
-        id: "keep_open",
-        label: `Keep Launcher Open: ${keepLauncherOpen ? "ON" : "OFF"}`,
-        type: "button",
-        onClick: handleKeepOpenToggle,
-      });
-      items.push({
-        id: "tray_icon",
-        label: `Tray Icon: ${enableTrayIcon ? "ON" : "OFF"}`,
-        type: "button",
-        onClick: handleTrayToggle,
-      });
-
       if (isLinux) {
         items.push({
           id: "runner",
@@ -311,22 +288,19 @@ const SettingsView = memo(function SettingsView() {
           type: "button",
           onClick: handleRunnerToggle,
         });
-
-        if (runners.length === 0 || runners.every(r => r.type !== 'proton')) {
-          items.push({
-            id: "download_runner",
-            label: isRunnerDownloading
-              ? `Downloading Runner... ${Math.floor(runnerDownloadProgress || 0)}%`
-              : "Download GE-Proton (Recommended)",
-            type: "button",
-            onClick: () => {
-              if (!isRunnerDownloading) {
-                downloadRunner("GE-Proton9-25", "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/GE-Proton9-25/GE-Proton9-25.tar.gz");
-              }
-            },
-            small: true,
-          });
-        }
+        items.push({
+          id: "download_runner",
+          label: isRunnerDownloading
+            ? `Downloading Runner... ${Math.floor(runnerDownloadProgress || 0)}%`
+            : "Download GE-Proton (Recommended)",
+          type: "button",
+          onClick: () => {
+            if (!isRunnerDownloading) {
+              downloadRunner("GE-Proton9-25", "https://github.com/GloriousEggroll/proton-ge-custom/releases/download/GE-Proton9-25/GE-Proton9-25.tar.gz");
+            }
+          },
+          small: true,
+        });
       }
 
       items.push({
@@ -374,8 +348,6 @@ const SettingsView = memo(function SettingsView() {
     rpcEnabled,
     legacyMode,
     animationsEnabled,
-    keepLauncherOpen,
-    enableTrayIcon,
     layout,
     isLinux,
     selectedRunnerName,
@@ -389,8 +361,6 @@ const SettingsView = memo(function SettingsView() {
     handleRpcToggle,
     handleLegacyToggle,
     handleAnimationsToggle,
-    handleKeepOpenToggle,
-    handleTrayToggle,
     handleLayoutToggle,
     handleRunnerToggle,
     handlePerfToggle,

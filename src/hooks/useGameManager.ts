@@ -1,8 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { TauriService } from "../services/TauriService";
-
-const appWindow = getCurrentWindow();
 
 const BASE_EDITIONS = [
   {
@@ -52,7 +49,6 @@ interface GameManagerProps {
   setProfile: (id: string) => void;
   customEditions: any[];
   setCustomEditions: (editions: any[]) => void;
-  keepLauncherOpen: boolean;
 }
 
 export function useGameManager({
@@ -60,7 +56,6 @@ export function useGameManager({
   setProfile,
   customEditions,
   setCustomEditions,
-  keepLauncherOpen,
 }: GameManagerProps) {
   const [installs, setInstalls] = useState<string[]>([]);
   const [isGameRunning, setIsGameRunning] = useState(false);
@@ -162,9 +157,6 @@ export function useGameManager({
     setError(null);
     setIsGameRunning(true);
     try {
-      if (!keepLauncherOpen) {
-        await appWindow.hide();
-      }
       await TauriService.launchGame(profile, PARTNERSHIP_SERVERS);
     } catch (e: any) {
       console.error(e);
@@ -173,9 +165,6 @@ export function useGameManager({
       );
     } finally {
       setIsGameRunning(false);
-      await appWindow.show();
-      await appWindow.unminimize();
-      await appWindow.setFocus();
     }
   }, [isGameRunning, profile]);
 
