@@ -19,14 +19,6 @@ const BASE_EDITIONS = [
     supportsSlimSkins: false,
   },
   {
-    id: "vanilla_tu19",
-    name: "Title Update 19",
-    desc: "Leaked 4J Studios build. (smartcmd)",
-    url: "https://github.com/smartcmd/MinecraftConsoles/releases/download/nightly/LCEWindows64.zip",
-    titleImage: "/images/minecraft_title_tu19.png",
-    supportsSlimSkins: false,
-  },
-  {
     id: "360revived",
     name: "360Revived",
     desc: "PC port of Xbox 360 Edition TU19",

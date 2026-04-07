@@ -429,7 +429,7 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                           <div className="bg-black/50 border-2 border-white/20 p-4">
                             <div className="flex items-center justify-between">
                               <div className="text-left">
-                                <p className="text-white font-bold">Visual Effects</p>
+                                <p className="text-white font-bold">Click effects</p>
                                 <p className="text-xs text-white/60">Click particles and animations</p>
                               </div>
                               <button

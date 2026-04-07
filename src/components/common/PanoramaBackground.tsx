@@ -8,7 +8,7 @@ interface PanoramaProps {
 
 const PanoramaBackground = React.memo(({ profile, isDay }: PanoramaProps) => {
   const { isWindowVisible } = useUI();
-  const PANORAMA_PROFILES = ['legacy_evolved', 'vanilla_tu19', 'vanilla_tu24', '360revived'];
+  const PANORAMA_PROFILES = ['legacy_evolved', '360revived'];
   const profileId = PANORAMA_PROFILES.includes(profile) ? profile : 'legacy_evolved';
   const currentPanorama = `/panorama/${profileId}_Panorama_Background_${isDay ? 'Day' : 'Night'}.png`;
 

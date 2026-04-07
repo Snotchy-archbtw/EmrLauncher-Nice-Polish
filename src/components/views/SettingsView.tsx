@@ -243,7 +243,7 @@ const SettingsView = memo(function SettingsView() {
     } else if (currentSubMenu === "video") {
       items.push({
         id: "vfx",
-        label: `VFX: ${vfxEnabled ? "ON" : "OFF"}`,
+        label: `Click effects: ${vfxEnabled ? "ON" : "OFF"}`,
         type: "button",
         onClick: handleVfxToggle,
       });
@@ -256,7 +256,7 @@ const SettingsView = memo(function SettingsView() {
       if (isMac) {
         items.push({
           id: "perf",
-          label: `M1/M2 Boost: ${perfBoost ? "Enabled" : "Disabled"}`,
+          label: `Apple silicon performance boost: ${perfBoost ? "Enabled" : "Disabled"}`,
           type: "button",
           onClick: handlePerfToggle,
         });

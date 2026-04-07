@@ -17,7 +17,7 @@ const SPLASHES = [
   "Reinventing the wheel!", "The cake is a lie.", "Powered by copious amounts of coffee.",
   "I'm running out of ideas.", "That's no moon...", "Now with 100% more nostalgia!",
   "Legacy is the new modern.", "No microtransactions!", "As seen on TV!", "Ironic, isn't it?",
-  "Creeper? Aww man.", "Technoblade never dies!",
+  "Creeper? Aww man.", "Technoblade never dies!", "is smartcmd dead ?", "NO BUILT IN MS AUTH !",
 ];
 
 interface AudioControllerProps {
