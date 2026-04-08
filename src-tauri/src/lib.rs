@@ -146,7 +146,7 @@ fn unix_path_to_wine_z_path(unix_path: &PathBuf) -> String {
 }
 
 fn get_config_path(app: &AppHandle) -> PathBuf {
-    get_app_dir(app).join("emerald_legacy_config.json")
+    get_app_dir(app).join("lce_emerald_config.json")
 }
 
 #[tauri::command]
@@ -161,8 +161,17 @@ fn save_config(app: AppHandle, config: AppConfig) {
 #[tauri::command]
 fn load_config(app: AppHandle) -> AppConfig {
     let path = get_config_path(&app);
-    if let Ok(content) = fs::read_to_string(path) {
+    if let Ok(content) = fs::read_to_string(&path) {
         if let Ok(config) = serde_json::from_str(&content) {
+            return config;
+        }
+    }
+
+    let old_json_path = get_app_dir(&app).join("emerald_legacy_config.json");
+    if let Ok(content) = fs::read_to_string(&old_json_path) {
+        if let Ok(config) = serde_json::from_str::<AppConfig>(&content) {
+            let _ = save_config(app.clone(), config.clone());
+            let _ = fs::remove_file(old_json_path);
             return config;
         }
     }
@@ -500,7 +509,7 @@ async fn setup_macos_runtime(window: tauri::Window, app: AppHandle) -> Result<()
         let archive_path = runtime_dir.join(format!("gptk_{}", asset.name));
         let response = client
             .get(&asset.browser_download_url)
-            .header("User-Agent", "Emerald-Legacy-Launcher")
+            .header("User-Agent", "LCE-Emerald-Launcher")
             .send()
             .await
             .map_err(|e| e.to_string())?
