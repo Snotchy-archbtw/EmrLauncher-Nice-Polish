@@ -309,7 +309,6 @@ const SettingsView = memo(function SettingsView() {
         type: "button",
         onClick: handleResetSetup,
         color: "orange",
-        small: true,
       });
     }
 

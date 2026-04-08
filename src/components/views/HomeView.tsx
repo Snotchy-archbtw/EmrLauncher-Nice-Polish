@@ -14,11 +14,9 @@ const HomeView = memo(function HomeView() {
   const { playPressSound, playSfx } = useAudio();
   const {
     handleLaunch,
-    isGameRunning,
     editions,
     installs,
     toggleInstall,
-    downloadProgress,
     downloadingId,
   } = useGame();
 
@@ -28,30 +26,36 @@ const HomeView = memo(function HomeView() {
   const isInstalled = installs.includes(profile);
   const isDownloading = downloadingId === profile;
   const [menuFocus, setMenuFocus] = useState<number | null>(null);
+  const hasAnyInstall = installs.length > 0;
+
   const buttons = useMemo(
     () => [
       {
-        label: isDownloading
-          ? `Downloading... ${Math.floor(downloadProgress || 0)}%`
-          : isInstalled
-            ? `Play Game`
-            : `Download ${selectedVersionName}`,
-        action: isDownloading
-          ? () => {}
-          : isInstalled
-            ? handleLaunch
-            : () => toggleInstall(profile),
+        label: !hasAnyInstall
+          ? "Install a version"
+          : isDownloading
+            ? "Installation in progress..."
+            : isInstalled
+              ? "Play Game"
+              : `Download ${selectedVersionName}`,
+        action: !hasAnyInstall
+          ? () => setActiveView("versions")
+          : isDownloading
+            ? () => {}
+            : isInstalled
+              ? handleLaunch
+              : () => toggleInstall(profile),
         isDanger: false,
+        disabled: isDownloading,
       },
-      { label: "Help & Options", action: () => setActiveView("settings") },
-      { label: "Versions", action: () => setActiveView("versions") },
-      { label: "Workshop", action: () => setActiveView("workshop") },
-      { label: "Developer Tools", action: () => setActiveView("devtools") },
+      { label: "Help & Options", action: () => setActiveView("settings"), disabled: false },
+      { label: "Versions", action: () => setActiveView("versions"), disabled: false },
+      { label: "Workshop", action: () => setActiveView("workshop"), disabled: false },
+      { label: "Developer Tools", action: () => setActiveView("devtools"), disabled: false },
     ],
     [
-      isGameRunning,
       isDownloading,
-      downloadProgress,
+      hasAnyInstall,
       isInstalled,
       selectedVersionName,
       handleLaunch,
@@ -98,22 +102,25 @@ const HomeView = memo(function HomeView() {
       {buttons.map((btn: any, i: number) => (
         <button
           key={i}
-          onMouseEnter={() => isFocusedSection && setMenuFocus(i)}
+          onMouseEnter={() => isFocusedSection && !btn.disabled && setMenuFocus(i)}
           onMouseLeave={() => setMenuFocus(null)}
           onClick={() => {
-            if (isFocusedSection) {
+            if (isFocusedSection && !btn.disabled) {
               playPressSound();
               btn.action();
             }
           }}
-          className={`w-full h-12 flex items-center justify-center text-2xl mc-text-shadow transition-colors outline-none border-none ${menuFocus === i ? (btn.isDanger ? "text-red-400" : "text-[#FFFF55]") : btn.isDanger ? "text-red-500" : "text-white"}`}
+          disabled={btn.disabled}
+          className={`w-full h-12 flex items-center justify-center text-2xl mc-text-shadow transition-colors outline-none border-none ${btn.disabled ? "text-gray-400 cursor-not-allowed" : menuFocus === i ? (btn.isDanger ? "text-red-400" : "text-[#FFFF55]") : btn.isDanger ? "text-red-500" : "text-white"}`}
           style={{
-            backgroundImage:
-              menuFocus === i
+            backgroundImage: btn.disabled
+              ? "url('/images/Button_Background.png')"
+              : menuFocus === i
                 ? "url('/images/button_highlighted.png')"
                 : "url('/images/Button_Background.png')",
             backgroundSize: "100% 100%",
             imageRendering: "pixelated",
+            opacity: btn.disabled ? 0.5 : 1,
           }}
         >
           {btn.label}

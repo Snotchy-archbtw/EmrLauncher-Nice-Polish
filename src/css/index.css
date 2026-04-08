@@ -87,16 +87,43 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: url('/images/backgroundframe.png') center;
-  background-size: 100% auto;
+  background: url('/images/SliderHandlerBackground.png') center;
+  background-size: 100% 100%;
   image-rendering: pixelated;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: url('/images/SliderHandlerBackground.png') no-repeat center;
+  background: url('/images/Slider_Handle.png') no-repeat center;
   background-size: 100% 100%;
   image-rendering: pixelated;
   cursor: pointer;
+  min-height: 44px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  filter: brightness(1.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 14px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: url('/images/SliderHandlerBackground.png') center;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: url('/images/Slider_Handle.png') no-repeat center;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  filter: brightness(1.2);
 }
 
 .no-animations * {

@@ -57,8 +57,11 @@ export default function App() {
     (e: any) => e.id === config.profile,
   );
   const selectedVersionName = selectedEdition?.name || "";
+  const hasAnyInstall = game.installs.length > 0;
 
-  const titleImage = selectedEdition?.titleImage || "/images/MenuTitle.png";
+  const titleImage = hasAnyInstall
+    ? (selectedEdition?.titleImage || "/images/MenuTitle.png")
+    : "/images/MenuTitle.png";
 
   useEffect(() => {
     if (config.isLoaded) {
@@ -285,6 +288,7 @@ export default function App() {
                           </div>
                         </motion.div>
                         {activeView === "main" &&
+                          hasAnyInstall &&
                           titleImage === "/images/MenuTitle.png" && (
                             <motion.div
                               key="tu-subtitle"

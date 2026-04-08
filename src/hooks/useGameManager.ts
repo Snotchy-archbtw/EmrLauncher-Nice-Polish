@@ -14,13 +14,13 @@ const BASE_EDITIONS = [
     id: "revelations",
     name: "Legacy Revelations",
     desc: "QoL, performance, hardcore mode, & security features for LCE.",
-    url: "https://github.com/itsRevela/MinecraftConsoles/releases/download/Nightly/LCREWindows64.zip",
+    url: "https://github.com/LCE-Hub/LCE-Revelations/releases/download/Nightly/LCE-Revelations-Client-Win64.zip",
     titleImage: "/images/minecraft_title_revelations.png",
     supportsSlimSkins: false,
   },
   {
     id: "360revived",
-    name: "360Revived",
+    name: "360 Revived",
     desc: "PC port of Xbox 360 Edition TU19",
     url: "https://github.com/BluTac10/360Revived/releases/download/nightly/LCEWindows64.zip",
     titleImage: "/images/minecraft_title_360revived.png",
@@ -144,6 +144,19 @@ export function useGameManager({
     [checkInstalls],
   );
 
+  const handleCancelDownload = useCallback(async () => {
+    if (!downloadingId) return;
+    try {
+      await TauriService.cancelDownload();
+      await TauriService.deleteInstance(downloadingId);
+      setDownloadingId(null);
+      setDownloadProgress(null);
+      await checkInstalls();
+    } catch (e) {
+      console.error(e);
+    }
+  }, [downloadingId, checkInstalls]);
+
   const handleLaunch = useCallback(async () => {
     if (isGameRunning) return;
     setError(null);
@@ -212,6 +225,7 @@ export function useGameManager({
     editions,
     toggleInstall,
     handleUninstall,
+    handleCancelDownload,
     handleLaunch,
     stopGame,
     addCustomEdition,
