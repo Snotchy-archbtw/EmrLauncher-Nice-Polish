@@ -49,7 +49,7 @@ class RPC {
     activity.setTimestamps(new Timestamps(this.startTime));
 
     activity.setButton([
-      new Button("Discord", "https://discord.gg/A285mSfkcF"),
+      new Button("Discord", "https://discord.gg/vD8akRU24f"),
       new Button("GitHub", "https://github.com/LCE-Hub/LCE-Emerald-Launcher")
     ]);
 
