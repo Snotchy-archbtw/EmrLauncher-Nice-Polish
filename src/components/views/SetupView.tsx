@@ -277,7 +277,7 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                     {currentStep === 0 && (
                       <div className="text-center">
                         <h2 className="text-3xl font-bold mb-6 text-white" style={{ textShadow: "2px 2px 0px rgba(0,0,0,0.8)" }}>
-                          Welcome to Emerald Legacy
+                          Welcome to Emerald Launcher
                         </h2>
                         <p className="text-lg mb-8 text-white/80">Let's configure your launcher</p>
 
@@ -289,7 +289,7 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                               value={tempUsername}
                               onChange={(e) => setTempUsername(e.target.value)}
                               onFocus={() => setFocusIndex(0)}
-                              className={`w-full px-4 py-3 bg-black/50 border-2 font-bold focus:outline-none transition-colors ${focusIndex === 0 ? "border-yellow-400" : "border-white"}`}
+                              className={`w-full px-4 py-3 bg-black/50 border-2 focus:outline-none transition-colors ${focusIndex === 0 ? "border-yellow-400" : "border-white"}`}
                               placeholder="Enter your username"
                               maxLength={16}
                               autoFocus
@@ -306,8 +306,8 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                         </h2>
                         <p className="text-lg mb-6 text-white/80">
                           {runtimeAlreadyInstalled
-                            ? "Emerald Legacy compatibility runtime is already installed"
-                            : "Emerald Legacy needs compatibility runtime for macOS"
+                            ? "Emerald compatibility runtime is already installed"
+                            : "Emerald needs compatibility runtime for macOS"
                           }
                         </p>
 
@@ -454,7 +454,7 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                             <div className="flex items-center justify-between">
                               <div className="text-left">
                                 <p className="text-white font-bold">Discord Rich Presence</p>
-                                <p className="text-xs text-white/60">Show your Emerald Legacy status on Discord</p>
+                                <p className="text-xs text-white/60">Show your Emerald Launcher status on Discord</p>
                               </div>
                               <button
                                 onClick={() => {
@@ -508,7 +508,7 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                           </div>
                         </div>
 
-                        <p className="text-white/80">Emerald Legacy is now configured and ready to use!</p>
+                        <p className="text-white/80">Emerald Launcher is now configured and ready to use!</p>
                       </div>
                     )}
                   </motion.div>
