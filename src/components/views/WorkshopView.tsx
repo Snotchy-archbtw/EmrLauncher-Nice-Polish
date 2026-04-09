@@ -211,9 +211,9 @@ const WorkshopView = memo(function WorkshopView() {
       <div
         className="w-[95%] flex-1 relative overflow-hidden"
         style={{
-          backgroundImage: "url('/images/frame_background.png')",
-          backgroundSize: '100% 100%',
-          imageRendering: 'pixelated',
+   //       backgroundImage: "url('/images/frame_background.png')",
+   //       backgroundSize: '100% 100%',
+   //       imageRendering: 'pixelated',
           minHeight: '430px',
         }}
       >

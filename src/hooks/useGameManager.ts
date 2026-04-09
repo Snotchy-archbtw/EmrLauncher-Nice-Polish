@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { TauriService } from "../services/TauriService";
-
+import { getCurrentWindow } from "@tauri-apps/api/window";
 const BASE_EDITIONS = [
   {
     id: "legacy_evolved", //neo: yes. we're not changing the ID. that will break user data.
     name: "neoLegacy",
-    desc: "Backporting newer title updates back to LCE",
+    desc: "Backporting newer title updates and Minigames back to LCE",
     url: "https://codeberg.org/piebot/LegacyEvolved/releases/download/nightly/LCEWindows64.zip",
     titleImage: "/images/minecraft_title_neoLegacy.png",
     supportsSlimSkins: true,
@@ -164,6 +164,7 @@ export function useGameManager({
     setError(null);
     setIsGameRunning(true);
     try {
+      getCurrentWindow().minimize();
       await TauriService.launchGame(profile, PARTNERSHIP_SERVERS);
     } catch (e: any) {
       console.error(e);
