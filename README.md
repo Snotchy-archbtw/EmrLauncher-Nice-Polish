@@ -90,15 +90,6 @@ Emerald Legacy Launcher integrates multiple community-driven builds of Minecraft
 | **[360 Revived](https://github.com/BluTac10/360Revived)** | [@BluTac10](https://github.com/BluTac10) | GitHub | PC port of Xbox 360 Edition TU19 with desktop optimizations. Features keyboard & mouse, fullscreen, LAN multiplayer, dedicated server, and split-screen support. |
 | **[Legacy Evolved](https://codeberg.org/piebot/LegacyEvolved)** | [@piebot](https://codeberg.org/piebot) | Codeberg | Backports newer title updates to LCE TU19 base. Currently porting TU25 (~98% complete) and TU31 (~76% complete). |
 
-### Coming Soon: Legacy Minecraft Restoration Project (LMRP)
-
-**LMRP** will be our **first major collaboration** to bring fully functional **online mini-games** back to Legacy Console Edition. This groundbreaking project aims to:
-
-- Restore classic LCE mini-games (Battle, Tumble, Glide)
-- Preserve the authentic mini-game mechanics and maps
-
-Stay tuned for updates on this exciting partnership! :)
-
 ---
 
 ## Screenshots
