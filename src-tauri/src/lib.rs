@@ -953,7 +953,7 @@ async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Re
         .and_then(|s| serde_json::from_str(&s).ok())
         .unwrap_or_default();
 
-    let raw_base = format!("https://raw.githubusercontent.com/Emerald-Legacy-Launcher/Workshop/refs/heads/main/{}", request.package_id);
+    let raw_base = format!("https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/{}", request.package_id);
     let tmp_dir = root.join(format!("workshop_tmp_{}", request.package_id));
     fs::create_dir_all(&tmp_dir).map_err(|e| e.to_string())?;
     for (zip_name, placeholder) in &request.zips {

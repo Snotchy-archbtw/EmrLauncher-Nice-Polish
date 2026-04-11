@@ -5,7 +5,6 @@ import { TauriService } from '../../services/TauriService';
 
 const REGISTRY_URL = 'https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/registry.json';
 const RAW_BASE = 'https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main';
-
 const CATEGORY_TABS = ['Skin', 'Texture', 'World', 'Mod', 'DLC'] as const;
 const ALL_TABS = [...CATEGORY_TABS, 'Search'] as const;
 type TabType = typeof ALL_TABS[number];
