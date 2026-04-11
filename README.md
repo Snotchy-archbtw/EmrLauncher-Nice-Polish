@@ -88,7 +88,7 @@ Emerald Legacy Launcher integrates multiple community-driven builds of Minecraft
 |-------|-----------|----------|-------------|
 | **[Revelations](https://github.com/itsRevela/MinecraftConsoles)** | [@itsRevela](https://github.com/itsRevela) | GitHub | Enhanced LCE with uncapped FPS, graphics fixes, hardcore hearts, and dedicated server security. Features LAN multiplayer, split-screen, and keyboard & mouse support. |
 | **[360 Revived](https://github.com/BluTac10/360Revived)** | [@BluTac10](https://github.com/BluTac10) | GitHub | PC port of Xbox 360 Edition TU19 with desktop optimizations. Features keyboard & mouse, fullscreen, LAN multiplayer, dedicated server, and split-screen support. |
-| **[Legacy Evolved](https://codeberg.org/piebot/LegacyEvolved)** | [@piebot](https://codeberg.org/piebot) | Codeberg | Backports newer title updates to LCE TU19 base. Currently porting TU25 (~98% complete) and TU31 (~76% complete). |
+| **[neoLegacy](https://github.com/pieeebot/neoLegacy)** | [@pieeebot](https://github.com/pieeebot) | GitHub | Backports newer title updates to LCE TU19 base. And Minigames. |
 
 ---
 
