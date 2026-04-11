@@ -1068,6 +1068,10 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
                 {
                     cmd.process_group(0);
                     cmd.env_remove("LD_PRELOAD");
+                    cmd.env_remove("PYTHONPATH");
+                    cmd.env_remove("PYTHONHOME");
+                    cmd.env_remove("LD_LIBRARY_PATH");
+                    cmd.env_remove("QT_PLUGIN_PATH");
                 }
 
                 cmd.arg(&game_exe)
