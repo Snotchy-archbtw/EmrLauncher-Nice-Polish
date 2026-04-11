@@ -15,7 +15,7 @@ const BASE_EDITIONS = [
     id: "revelations",
     name: "Legacy Revelations",
     desc: "QoL, performance, hardcore mode, & security features for LCE.",
-    url: "https://github.com/LCE-Hub/LCE-Revelations/releases/download/Nightly/LCE-Revelations-Client-Win64.zip",
+    url: "https://github.com/itsRevela/LCE-Revelations/releases/download/Nightly/LCE-Revelations-Client-Win64.zip",
     titleImage: "/images/minecraft_title_revelations.png",
     supportsSlimSkins: false,
   },
