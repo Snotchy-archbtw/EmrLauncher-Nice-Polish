@@ -190,15 +190,15 @@ const ScreenshotsView = memo(function ScreenshotsView() {
               <div className="flex gap-4 mt-8 w-full justify-center">
                 <button
                   onClick={() => handleDelete(selectedScreenshot)}
-                  className={`mc-button px-6 py-2 text-red-500 mc-text-shadow flex items-center justify-center transition-all ${modalFocusIndex === 1 ? "scale-110 brightness-125" : ""}`}
-                  style={{ minWidth: "180px", height: "48px", backgroundImage: modalFocusIndex === 1 ? "url('/images/button_highlighted.png')" : "" }}
+                  className={`mc-button px-6 py-2 text-red-500 mc-text-shadow flex items-center justify-center transition-all ${modalFocusIndex === 0 ? "scale-110 brightness-125" : ""}`}
+                  style={{ minWidth: "180px", height: "48px", backgroundImage: modalFocusIndex === 0 ? "url('/images/button_highlighted.png')" : "" }}
                 >
                   Delete
                 </button>
                 <button
                   onClick={() => setSelectedScreenshot(null)}
-                  className={`mc-button px-6 py-2 text-white mc-text-shadow flex items-center justify-center transition-all ${modalFocusIndex === 2 ? "scale-110 brightness-125" : ""}`}
-                  style={{ minWidth: "120px", height: "48px", backgroundImage: modalFocusIndex === 2 ? "url('/images/button_highlighted.png')" : "" }}
+                  className={`mc-button px-6 py-2 text-white mc-text-shadow flex items-center justify-center transition-all ${modalFocusIndex === 1 ? "scale-110 brightness-125" : ""}`}
+                  style={{ minWidth: "120px", height: "48px", backgroundImage: modalFocusIndex === 1 ? "url('/images/button_highlighted.png')" : "" }}
                 >
                   Close
                 </button>
