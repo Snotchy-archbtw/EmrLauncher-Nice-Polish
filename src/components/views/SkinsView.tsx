@@ -12,12 +12,11 @@ interface SavedSkin {
 
 const DEFAULT_SKINS: SavedSkin[] = [
   { id: 'default', name: 'Default Steve', url: '/images/Default.png' },
-  { id: 'journ3ym3n', name: 'Journ3ym3n', url: '/Skins/Journ3ym3n.png' },
+  { id: 'neoapps', name: 'neoapps', url: '/Skins/neoapps.png' },
   { id: 'justneki', name: 'JustNeki', url: '/Skins/JustNeki.png' },
   { id: 'kayjann', name: 'KayJann', url: '/Skins/KayJann.png' },
   { id: 'leon', name: 'Leon', url: '/Skins/Leon.png' },
   { id: 'mr_anilex', name: 'mr_anilex', url: '/Skins/mr_anilex.png' },
-  { id: 'neoapps', name: 'neoapps', url: '/Skins/neoapps.png' },
   { id: 'peter', name: 'Peter', url: '/Skins/Peter.png' },
   { id: 'piebot', name: 'piebot', url: '/Skins/piebot.png' }
 ];
