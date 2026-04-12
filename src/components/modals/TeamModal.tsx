@@ -10,12 +10,11 @@ export default function TeamModal({
   const [focusIndex, setFocusIndex] = useState(0);
 
   const team = [
+    { name: "neoapps", url: "https://github.com/neoapps-dev" },
+    { name: "KayJann", url: "https://github.com/KayJannOnGit" },
+    { name: "Santiago Fisela", url: "https://github.com/PinkLittleKitty" },
     { name: "Leon", url: "https://github.com/hornyalcoholic" },
     { name: "Criador_Mods", url: "https://github.com/CriadorMods" },
-    { name: "journ3ym3m", url: "https://github.com/journ3ym3n" },
-    { name: "KayJann", url: "https://github.com/KayJannOnGit" },
-    { name: "neoapps", url: "https://github.com/neoapps-dev" },
-    { name: "Santiago Fisela", url: "https://github.com/PinkLittleKitty" },
   ];
 
   useEffect(() => {
