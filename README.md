@@ -74,7 +74,7 @@ The project started as a solo effort and has grown into a collaborative communit
 | **Custom Skins** | Import and manage your own skins with local storage |
 | **Controller Support** | Full gamepad navigation support (keyboard fallback included) |
 | **Discord Rich Presence** | Show your current activity and game status on Discord |
-| **Workshop and modloader** | *(Coming Soon)* Community content and mod browser |
+| **Workshop** | Community content |
 
 ---
 
@@ -102,7 +102,7 @@ Emerald Legacy Launcher integrates multiple community-driven builds of Minecraft
 
 ### Windows
 
-Download the latest release from [GitHub Releases](https://github.com/Emerald-Legacy-Launcher/Emerald-Legacy-Launcher/releases):
+Download the latest release from [GitHub Releases](https://github.com/LCE-Hub/LCE-Emerald-Launcher/releases):
 
 | Format | Best For |
 |--------|----------|
@@ -171,7 +171,7 @@ sudo dnf install webkit2gtk4.1-devel libappindicator-gtk3-devel librsvg2-devel p
 
 ```bash
 # Clone the repository
-git clone https://github.com/Emerald-Legacy-Launcher/Emerald-Legacy-Launcher.git
+git clone https://github.com/LCE-Hub/LCE-Emerald-Launcher.git
 cd Emerald-Legacy-Launcher
 
 # Install dependencies
@@ -221,7 +221,7 @@ sudo apt install --reinstall libwebkit2gtk-4.1-0
 ### Controller Not Detected
 
 - Connect controller before launching the launcher
-- Xbox and PlayStation controllers are best supported
+- PlayStation controllers are not supported in-game but work in launcher. Use Steam Input.
 
 ---
 
@@ -245,12 +245,3 @@ Track our progress and upcoming features on the [Development Roadmap](https://gi
 ## License
 
 This project is licensed under the **[GNU GPL v3 License](LICENSE)**.
-
-You are free to:
-- **Use** — Use the launcher for any purpose
-- **Study** — Access and study the source code
-- **Share** — Redistribute copies
-- **Improve** — Submit improvements and modifications
-
-See `LICENSE` file for full terms.
-
