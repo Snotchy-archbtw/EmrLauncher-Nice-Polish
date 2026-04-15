@@ -169,4 +169,8 @@ export class TauriService {
   static async fetchSkin(username: string): Promise<[string, string]> {
     return invoke("fetch_skin", { username });
   }
+
+  static async saveGlobalSkinPck(pckData: Uint8Array): Promise<void> {
+    return invoke("save_global_skin_pck", { pckData: Array.from(pckData) });
+  }
 }

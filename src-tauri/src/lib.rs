@@ -1033,18 +1033,14 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
     let username = config.username;
     let _ = fs::write(instance_dir.join("username.txt"), &username);
     ensure_server_list(&instance_dir, servers);
-    if let Some(skin_data) = config.skin_base64 {
-        use base64::{Engine as _, engine::general_purpose};
-        let base64_str = skin_data.split(',').nth(1).unwrap_or(&skin_data);
-        if let Ok(bytes) = general_purpose::STANDARD.decode(base64_str) {
-            let skin_dir = instance_dir.join("Common").join("res").join("mob");
-            let _ = fs::create_dir_all(&skin_dir);
-            let _ = fs::write(skin_dir.join("char.png"), bytes);
-        }
+    let skin_pck_path = root.join("Skin.pck");
+    if skin_pck_path.exists() {
+        let skin_dlc_dir = instance_dir.join("Windows64Media").join("DLC").join("Custom Skins");
+        let _ = fs::create_dir_all(&skin_dlc_dir);
+        let _ = fs::copy(&skin_pck_path, skin_dlc_dir.join("Skin.pck"));
     }
 
     let _ = perform_dlc_sync(&app, &instance_dir)?;
-
     let game_exe = instance_dir.join("Minecraft.Client.exe");
     if !game_exe.exists() {
         return Err("Game executable not found in instance folder.".into());
@@ -1344,6 +1340,13 @@ fn delete_screenshot(path: String) -> Result<(), String> {
     fs::remove_file(path).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn save_global_skin_pck(app: AppHandle, pck_data: Vec<u8>) -> Result<(), String> {
+    let app_dir = get_app_dir(&app);
+    let _ = fs::write(app_dir.join("Skin.pck"), pck_data);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -1373,7 +1376,7 @@ pub fn run() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, sync_dlc, fetch_skin, workshop_install, get_screenshots, delete_screenshot])
+        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, sync_dlc, fetch_skin, workshop_install, get_screenshots, delete_screenshot, save_global_skin_pck])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

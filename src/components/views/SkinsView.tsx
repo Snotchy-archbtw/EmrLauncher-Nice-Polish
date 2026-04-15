@@ -8,23 +8,24 @@ interface SavedSkin {
   id: string;
   name: string;
   url: string;
+  isSlim?: boolean;
 }
 
 const DEFAULT_SKINS: SavedSkin[] = [
-  { id: 'default', name: 'Default Steve', url: '/images/Default.png' },
-  { id: 'neoapps', name: 'neoapps', url: '/Skins/neoapps.png' },
-  { id: 'justneki', name: 'JustNeki', url: '/Skins/JustNeki.png' },
-  { id: 'kayjann', name: 'KayJann', url: '/Skins/KayJann.png' },
-  { id: 'leon', name: 'Leon', url: '/Skins/Leon.png' },
-  { id: 'mr_anilex', name: 'mr_anilex', url: '/Skins/mr_anilex.png' },
-  { id: 'peter', name: 'Peter', url: '/Skins/Peter.png' },
-  { id: 'piebot', name: 'piebot', url: '/Skins/piebot.png' }
+  { id: 'default', name: 'Default Steve', url: '/images/Default.png', isSlim: false },
+  { id: 'neoapps', name: 'neoapps', url: '/Skins/neoapps.png', isSlim: false },
+  { id: 'justneki', name: 'JustNeki', url: '/Skins/JustNeki.png', isSlim: false },
+  { id: 'kayjann', name: 'KayJann', url: '/Skins/KayJann.png', isSlim: false },
+  { id: 'leon', name: 'Leon', url: '/Skins/Leon.png', isSlim: false },
+  { id: 'mr_anilex', name: 'mr_anilex', url: '/Skins/mr_anilex.png', isSlim: false },
+  { id: 'peter', name: 'Peter', url: '/Skins/Peter.png', isSlim: false },
+  { id: 'piebot', name: 'piebot', url: '/Skins/piebot.png', isSlim: false }
 ];
 
 const SkinsView = memo(function SkinsView() {
   const { setActiveView } = useUI();
   const { playPressSound, playBackSound } = useAudio();
-  const { skinUrl, setSkinUrl } = useSkin();
+  const { skinUrl, setSkinUrl, setSkinIsSlim } = useSkin();
 
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,30 +49,43 @@ const SkinsView = memo(function SkinsView() {
 
   const [showImportModal, setShowImportModal] = useState(false);
   const [modalFocusIndex, setModalFocusIndex] = useState(0);
-  const [importMode, setImportMode] = useState<'file' | 'username' | null>(null);
+  const [importMode, setImportMode] = useState<'file' | 'username' | 'model' | null>(null);
   const [importUsername, setImportUsername] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState('');
+  const [pendingSkin, setPendingSkin] = useState<{ url: string, defaultName: string } | null>(null);
 
   const processSkinImage = (url: string, defaultName: string) => {
+    setPendingSkin({ url, defaultName });
+    setImportMode('model');
+    setModalFocusIndex(0);
+  };
+
+  const handleFinalizeImport = (isSlim: boolean) => {
+    if (!pendingSkin) return;
     const img = new Image();
     img.crossOrigin = "Anonymous";
     img.onload = () => {
       const cvs = document.createElement("canvas");
-      cvs.width = 64;
-      cvs.height = 32;
+      cvs.width = img.width;
+      cvs.height = img.height;
       const ctx = cvs.getContext("2d");
       if (ctx) {
-        ctx.drawImage(img, 0, 0, 64, 32, 0, 0, 64, 32);
+        ctx.drawImage(img, 0, 0);
         const base64String = cvs.toDataURL("image/png");
         const newId = Date.now().toString();
-        const newSkin = { id: newId, name: defaultName, url: base64String };
+        const newSkin = { id: newId, name: pendingSkin.defaultName, url: base64String, isSlim };
         setSavedSkins(prev => [...prev, newSkin]);
         setSkinUrl(base64String);
+        setSkinIsSlim(isSlim);
         setActiveSkinId(newId);
       }
     };
-    img.src = url;
+    img.src = pendingSkin.url;
+
+    setShowImportModal(false);
+    setImportMode(null);
+    setPendingSkin(null);
   };
 
   const handleFetchUsername = async () => {
@@ -83,10 +97,6 @@ const SkinsView = memo(function SkinsView() {
       const [base64Raw, exactName] = await TauriService.fetchSkin(importUsername.trim());
       const skinBase64 = `data:image/png;base64,${base64Raw}`;
       processSkinImage(skinBase64, exactName.substring(0, 16));
-
-      setShowImportModal(false);
-      setImportMode(null);
-      setImportUsername('');
     } catch (e: any) {
       setImportError(typeof e === 'string' ? e : (e.message || 'Failed to fetch skin'));
     } finally {
@@ -130,13 +140,22 @@ const SkinsView = memo(function SkinsView() {
               setShowImportModal(false);
               setModalFocusIndex(0);
             }
-          } else {
+          } else if (importMode === 'username') {
             if (modalFocusIndex === 0 || modalFocusIndex === 1) handleFetchUsername();
             else if (modalFocusIndex === 2) {
               playBackSound();
               setImportMode(null);
               setImportUsername('');
               setImportError('');
+              setModalFocusIndex(0);
+            }
+          } else if (importMode === 'model') {
+            if (modalFocusIndex === 0) handleFinalizeImport(false);
+            else if (modalFocusIndex === 1) handleFinalizeImport(true);
+            else if (modalFocusIndex === 2) {
+              playBackSound();
+              setImportMode(null);
+              setPendingSkin(null);
               setModalFocusIndex(0);
             }
           }
@@ -212,14 +231,13 @@ const SkinsView = memo(function SkinsView() {
     };
     reader.readAsDataURL(file);
     e.target.value = '';
-    setShowImportModal(false);
-    setImportMode(null);
   };
 
   const handleSkinSelect = (skin: SavedSkin) => {
     playPressSound();
     setActiveSkinId(skin.id);
     setSkinUrl(skin.url);
+    setSkinIsSlim(skin.isSlim || false);
   };
 
   const isDefaultSkin = (id: string | null) => DEFAULT_SKINS.some(d => d.id === id);
@@ -230,6 +248,7 @@ const SkinsView = memo(function SkinsView() {
     const updatedSkins = savedSkins.filter(s => s.id !== activeSkinId);
     setSavedSkins(updatedSkins);
     setSkinUrl('/images/Default.png');
+    setSkinIsSlim(false);
     setActiveSkinId('default');
   };
 
@@ -296,8 +315,9 @@ const SkinsView = memo(function SkinsView() {
             const isFocused = focusIndex === idx;
             return (
               <div key={skin.id} data-index={idx} tabIndex={0} onMouseEnter={() => setFocusIndex(idx)} className="flex flex-col items-center gap-1 w-32 outline-none">
-                <div className="h-4">
+                <div className="h-4 flex items-center justify-center gap-1">
                   {isActive && <span className="text-[#FFFF55] text-xs mc-text-shadow uppercase tracking-widest">Active</span>}
+                  {skin.isSlim && <span className="bg-purple-500/50 border border-purple-500/80 text-white px-1 text-[10px] uppercase rounded">Slim</span>}
                 </div>
                 <div
                   onClick={() => handleSkinSelect(skin)}
@@ -352,7 +372,7 @@ const SkinsView = memo(function SkinsView() {
                   From Username
                 </button>
               </div>
-            ) : (
+            ) : importMode === 'username' ? (
               <div className="flex flex-col gap-4 w-full px-4 mb-2">
                 <input
                   type="text"
@@ -377,7 +397,27 @@ const SkinsView = memo(function SkinsView() {
                   {isImporting ? 'Fetching...' : 'Fetch Skin'}
                 </button>
               </div>
-            )}
+            ) : importMode === 'model' ? (
+              <div className="flex flex-col gap-4 w-full px-4 mb-2">
+                <span className="text-white/80 text-sm text-center mb-2 mc-text-shadow">Choose the player model type for this skin:</span>
+                <button
+                  onMouseEnter={() => setModalFocusIndex(0)}
+                  onClick={() => { playPressSound(); handleFinalizeImport(false); }}
+                  className={`w-full h-12 flex items-center justify-center transition-colors text-xl mc-text-shadow outline-none ${modalFocusIndex === 0 ? 'text-[#FFFF55]' : 'text-white'}`}
+                  style={{ backgroundImage: modalFocusIndex === 0 ? "url('/images/button_highlighted.png')" : "url('/images/Button_Background.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}
+                >
+                  Normal (Wide Arms)
+                </button>
+                <button
+                  onMouseEnter={() => setModalFocusIndex(1)}
+                  onClick={() => { playPressSound(); handleFinalizeImport(true); }}
+                  className={`w-full h-12 flex items-center justify-center transition-colors text-xl mc-text-shadow outline-none ${modalFocusIndex === 1 ? 'text-[#FFFF55]' : 'text-white'}`}
+                  style={{ backgroundImage: modalFocusIndex === 1 ? "url('/images/button_highlighted.png')" : "url('/images/Button_Background.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}
+                >
+                  Slim (Thin Arms)
+                </button>
+              </div>
+            ) : null}
 
             <button
               onMouseEnter={() => setModalFocusIndex(2)}
