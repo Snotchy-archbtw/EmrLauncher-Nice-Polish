@@ -9,6 +9,7 @@ import WorkshopView from "../components/views/WorkshopView";
 import SetupView from "../components/views/SetupView";
 import PckEditorView from "../components/views/PckEditorView";
 import { ArcEditorView } from "../components/views/ArcEditorView";
+import LocEditorView from "../components/views/LocEditorView";
 import ScreenshotsView from "../components/views/ScreenshotsView";
 import SkinViewer from "../components/common/SkinViewer";
 import TeamModal from "../components/modals/TeamModal";
@@ -347,6 +348,9 @@ export default function App() {
                       )}
                       {activeView === "arc-editor" && (
                         <ArcEditorView key="arc-editor-view" />
+                      )}
+                      {activeView === "loc-editor" && (
+                        <LocEditorView key="loc-editor-view" />
                       )}
                       {activeView === "skins" && <SkinsView key="skins-view" />}
                       {activeView === "screenshots" && (
