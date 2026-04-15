@@ -72,11 +72,24 @@ export default function PckEditorView() {
     return pck?.files.find(f => f.id === selectedAssetId) || null;
   }, [pck, selectedAssetId]);
 
-  const assetPreviewUrl = useMemo(() => {
-    if (!selectedAsset || ![PCKAssetType.SKIN, PCKAssetType.CAPE, PCKAssetType.TEXTURE].includes(selectedAsset.type)) return null;
+  const [assetPreview, setAssetPreview] = useState<{ id: string, url: string } | null>(null);
+
+  useEffect(() => {
+    if (!selectedAsset || ![PCKAssetType.SKIN, PCKAssetType.CAPE, PCKAssetType.TEXTURE, PCKAssetType.SKIN_DATA].includes(selectedAsset.type)) {
+      setAssetPreview(null);
+      return;
+    }
+
     const blob = new Blob([selectedAsset.data as any], { type: "image/png" });
-    return URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    setAssetPreview({ id: selectedAsset.id, url });
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
   }, [selectedAsset]);
+
+  const assetPreviewUrl = (assetPreview && selectedAsset && assetPreview.id === selectedAsset.id) ? assetPreview.url : null;
 
   const toggleFolder = (path: string) => {
     const next = new Set(expandedFolders);
@@ -353,6 +366,7 @@ export default function PckEditorView() {
   const getTypeColor = (type: PCKAssetType) => {
     switch (type) {
       case PCKAssetType.SKIN: return "#FFFF55";
+      case PCKAssetType.SKIN_DATA: return "#FFFF55";
       case PCKAssetType.CAPE: return "#AA00AA";
       case PCKAssetType.TEXTURE: return "#55FFFF";
       case PCKAssetType.AUDIO_DATA: return "#55FF55";
@@ -530,9 +544,9 @@ export default function PckEditorView() {
                   </div>
 
                   {assetPreviewUrl && (
-                    <div className="w-full h-64 bg-black/40 border-2 border-[#373737] mb-6 flex items-center justify-center overflow-hidden relative group">
-                      {(selectedAsset.type === PCKAssetType.SKIN || selectedAsset.type === PCKAssetType.CAPE) ? (
-                        <SkinPreview3D asset={selectedAsset} className="w-full h-full" />
+                    <div className="w-full h-[550px] bg-black/40 border-2 border-[#373737] mb-6 flex items-center justify-center overflow-hidden relative group">
+                      {(selectedAsset.type === PCKAssetType.SKIN || selectedAsset.type === PCKAssetType.CAPE || selectedAsset.type === PCKAssetType.SKIN_DATA) ? (
+                        <SkinPreview3D key={selectedAsset.id} asset={selectedAsset} previewUrl={assetPreviewUrl || undefined} className="w-full h-full" />
                       ) : (
                         <img src={assetPreviewUrl} className="max-w-full max-h-full object-contain" style={{ imageRendering: "pixelated" }} />
                       )}

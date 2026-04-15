@@ -4,6 +4,7 @@ import { PCKAsset, PCKAssetType } from '../../types/pck';
 
 interface SkinPreview3DProps {
   asset: PCKAsset;
+  previewUrl?: string;
   className?: string;
 }
 
@@ -42,60 +43,55 @@ enum SKIN_ANIM {
   DINNER_BONE_RENDERING = 1 << 31
 }
 
-const SkinPreview3D = memo(function SkinPreview3D({ asset, className }: SkinPreview3DProps) {
+const SkinPreview3D = memo(function SkinPreview3D({ asset, previewUrl, className }: SkinPreview3DProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const playerGroupRef = useRef<THREE.Group | null>(null);
 
   useEffect(() => {
     if (!mountRef.current) return;
-
     const width = mountRef.current.clientWidth;
     const height = mountRef.current.clientHeight;
-
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 70);
-
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 50);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     mountRef.current.innerHTML = "";
     mountRef.current.appendChild(renderer.domElement);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const dl = new THREE.DirectionalLight(0xffffff, 0.8);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
+    const dl = new THREE.DirectionalLight(0xffffff, 0.7);
     dl.position.set(10, 20, 10);
     scene.add(dl);
-
     const playerGroup = new THREE.Group();
-    playerGroup.position.y = -2;
+    playerGroup.position.y = 4;
     scene.add(playerGroup);
     playerGroupRef.current = playerGroup;
-
     const render = () => {
       renderer.render(scene, camera);
     };
 
-    const blob = new Blob([asset.data as any], { type: 'image/png' });
-    const url = URL.createObjectURL(blob);
+    const isFallbackUrl = !previewUrl;
+    const url = previewUrl || URL.createObjectURL(new Blob([asset.data as any], { type: 'image/png' }));
     const textureLoader = new THREE.TextureLoader();
-
+    let active = true;
     textureLoader.load(url, (texture) => {
+      if (!active) return;
       texture.magFilter = THREE.NearestFilter;
       texture.minFilter = THREE.NearestFilter;
       texture.colorSpace = THREE.SRGBColorSpace;
-
       const img = texture.image;
       const isLegacy = img.height === 32;
-
       const animProp = asset.properties.find(p => p.key === "ANIM");
       const animValue = animProp ? parseInt(animProp.value) || 0 : 0;
       const slimFormat = !!(animValue & SKIN_ANIM.SLIM_FORMAT);
-
+      const texW = img.width || 64;
+      const texH = img.height || 32;
       const createFaceMaterial = (x: number, y: number, w: number, h: number, flipX = false, flipY = false) => {
         const matTex = texture.clone();
-        matTex.repeat.set((flipX ? -w : w) / 64, (flipY ? -h : h) / img.height);
-        matTex.offset.set((flipX ? (x + w) : x) / 64, 1 - (flipY ? y : (y + h)) / img.height);
+        matTex.repeat.set((flipX ? -w : w) / texW, (flipY ? -h : h) / texH);
+        matTex.offset.set((flipX ? (x + w) : x) / texW, 1 - (flipY ? y : (y + h)) / texH);
         matTex.needsUpdate = true;
         return new THREE.MeshLambertMaterial({ map: matTex, transparent: true, alphaTest: 0.5, side: THREE.FrontSide });
       };
@@ -103,7 +99,6 @@ const SkinPreview3D = memo(function SkinPreview3D({ asset, className }: SkinPrev
       const createPart = (w: number, h: number, d: number, uv: any, overlayUv?: any, isMirror = false) => {
         const group = new THREE.Group();
         const geo = new THREE.BoxGeometry(w, h, d);
-
         const getMats = (uvSet: any) => {
           return [
             createFaceMaterial(uvSet.right[0], uvSet.right[1], uvSet.right[2], uvSet.right[3], isMirror), // +x
@@ -117,7 +112,6 @@ const SkinPreview3D = memo(function SkinPreview3D({ asset, className }: SkinPrev
 
         const mesh = new THREE.Mesh(geo, getMats(uv));
         group.add(mesh);
-
         if (overlayUv) {
           const oGeo = new THREE.BoxGeometry(w + 0.5, h + 0.5, d + 0.5);
           const oMesh = new THREE.Mesh(oGeo, getMats(overlayUv));
@@ -132,7 +126,7 @@ const SkinPreview3D = memo(function SkinPreview3D({ asset, className }: SkinPrev
         left: [x + 4 + w, y + 4, 4, 12], back: [x + 8 + w, y + 4, w, 12]
       });
 
-      if (asset.type === (PCKAssetType.CAPE as any)) {
+      if (asset.type === PCKAssetType.CAPE) {
         const capeUv = {
           top: [1, 0, 10, 1], bottom: [11, 0, 10, 1],
           right: [0, 1, 1, 16], front: [1, 1, 10, 16],
@@ -152,7 +146,7 @@ const SkinPreview3D = memo(function SkinPreview3D({ asset, className }: SkinPrev
           playerGroup.add(head);
         }
 
-        if (!(animValue & SKIN_ANIM.HIDE_BODY) && asset.type !== PCKAssetType.CAPE) {
+        if (!(animValue & SKIN_ANIM.HIDE_BODY)) {
           const bodyUv = { top: [20, 16, 8, 4], bottom: [28, 16, 8, 4], right: [16, 20, 4, 12], left: [28, 20, 4, 12], front: [20, 20, 8, 12], back: [32, 20, 8, 12] };
           const jacketUv = (isLegacy || (animValue & SKIN_ANIM.HIDE_JACKET)) ? undefined : { top: [20, 32, 8, 4], bottom: [28, 32, 8, 4], right: [16, 36, 4, 12], left: [28, 36, 4, 12], front: [20, 36, 8, 12], back: [32, 36, 8, 12] };
           playerGroup.add(createPart(8, 12, 4, bodyUv, jacketUv));
@@ -235,6 +229,8 @@ const SkinPreview3D = memo(function SkinPreview3D({ asset, className }: SkinPrev
 
       playerGroup.rotation.y = -0.3;
       render();
+    }, undefined, (err) => {
+      console.error("Failed to load skin texture", err);
     });
 
     let isDragging = false;
@@ -277,10 +273,11 @@ const SkinPreview3D = memo(function SkinPreview3D({ asset, className }: SkinPrev
     window.addEventListener("resize", handleResize);
 
     return () => {
+      active = false;
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("resize", handleResize);
-      URL.revokeObjectURL(url);
+      if (isFallbackUrl) URL.revokeObjectURL(url);
 
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
@@ -300,7 +297,7 @@ const SkinPreview3D = memo(function SkinPreview3D({ asset, className }: SkinPrev
       });
       renderer.dispose();
     };
-  }, [asset]);
+  }, [asset, previewUrl]);
 
   return <div ref={mountRef} className={`w-full h-full cursor-move ${className}`} />;
 });
