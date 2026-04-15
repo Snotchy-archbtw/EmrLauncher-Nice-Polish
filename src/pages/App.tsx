@@ -10,6 +10,8 @@ import SetupView from "../components/views/SetupView";
 import PckEditorView from "../components/views/PckEditorView";
 import { ArcEditorView } from "../components/views/ArcEditorView";
 import LocEditorView from "../components/views/LocEditorView";
+import GrfEditorView from "../components/views/GrfEditorView";
+import ColEditorView from "../components/views/ColEditorView";
 import ScreenshotsView from "../components/views/ScreenshotsView";
 import SkinViewer from "../components/common/SkinViewer";
 import TeamModal from "../components/modals/TeamModal";
@@ -351,6 +353,12 @@ export default function App() {
                       )}
                       {activeView === "loc-editor" && (
                         <LocEditorView key="loc-editor-view" />
+                      )}
+                      {activeView === "grf-editor" && (
+                        <GrfEditorView key="grf-editor-view" />
+                      )}
+                      {activeView === "col-editor" && (
+                        <ColEditorView key="col-editor-view" />
                       )}
                       {activeView === "skins" && <SkinsView key="skins-view" />}
                       {activeView === "screenshots" && (

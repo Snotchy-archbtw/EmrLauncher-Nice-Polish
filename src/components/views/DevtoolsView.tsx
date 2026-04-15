@@ -12,7 +12,9 @@ interface DevTool {
 const DEV_TOOLS: DevTool[] = [
   { id: "pck", name: "PCK Editor", view: "pck-editor", comingSoon: false },
   { id: "arc", name: "ARC Editor", view: "arc-editor", comingSoon: false },
-  { id: "loc", name: "LOC Editor", view: "loc-editor", comingSoon: false }
+  { id: "loc", name: "LOC Editor", view: "loc-editor", comingSoon: false },
+  { id: "grf", name: "GRF Editor", view: "grf-editor", comingSoon: false },
+  { id: "col", name: "COL Editor", view: "col-editor", comingSoon: false }
 ];
 
 export default function DevtoolsView() {
