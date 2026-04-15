@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUI, useAudio, useConfig } from "../../context/LauncherContext";
 import { PckService } from "../../services/PckService";
 import { PCKFile, PCKAsset, PCKAssetType } from "../../types/pck";
+import SkinPreview3D from "../common/SkinPreview3D";
 export default function PckEditorView() {
   const { setActiveView } = useUI();
   const { playPressSound, playBackSound } = useAudio();
@@ -13,6 +14,8 @@ export default function PckEditorView() {
   const [isEditingProperty, setIsEditingProperty] = useState<{ idx: number, key: string, val: string } | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [notification, setNotification] = useState<{ message: string, type: "success" | "error" } | null>(null);
+  const [showTypeModal, setShowTypeModal] = useState<{ file: File, data: Uint8Array } | null>(null);
+  const [isChangingType, setIsChangingType] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
@@ -148,7 +151,23 @@ export default function PckEditorView() {
       setExpandedFolders(new Set());
     } catch (err) {
       console.error("Failed to parse PCK", err);
+      showNotification("Failed to parse PCK", "error");
     }
+  };
+
+  const handleNewPCK = () => {
+    playPressSound();
+    const newPck: PCKFile = {
+      version: 2,
+      endianness: "little",
+      xmlSupport: false,
+      properties: ["ANIM", "BOX"],
+      files: []
+    };
+    setPck(newPck);
+    setSelectedAssetId(null);
+    setExpandedFolders(new Set());
+    showNotification("New PCK Created");
   };
 
 
@@ -201,28 +220,87 @@ export default function PckEditorView() {
     playPressSound();
     const buffer = await file.arrayBuffer();
     const data = new Uint8Array(buffer);
+    setShowTypeModal({ file, data });
+    e.target.value = "";
+  };
+
+  const confirmAddAsset = (type: PCKAssetType) => {
+    if (!pck || !showTypeModal) return;
+    const { file, data } = showTypeModal;
     const newAsset: PCKAsset = {
       id: Math.random().toString(36).substr(2, 9),
       path: file.name,
-      type: PCKAssetType.TEXTURE, //neo: this is the default btw
+      type,
       size: data.length,
       data,
       properties: []
     };
 
+    if (type === PCKAssetType.SKIN || type === PCKAssetType.CAPE) {
+      newAsset.properties.push({ key: "ANIM", value: "0" });
+    }
+
     setPck({ ...pck, files: [...pck.files, newAsset] });
     setSelectedAssetId(newAsset.id);
-    e.target.value = "";
+    setShowTypeModal(null);
     showNotification("Asset Added");
   };
 
-  const handlePropertyEdit = (idx: number, newVal: string) => {
+  const handlePropertyEdit = (idx: number, newVal: string, isKey = false) => {
     if (!pck || !selectedAssetId) return;
     const newFiles = pck.files.map(f => {
       if (f.id === selectedAssetId) {
         const newProps = [...f.properties];
-        newProps[idx] = { ...newProps[idx], value: newVal };
+        if (isKey) {
+          newProps[idx] = { ...newProps[idx], key: newVal };
+          if (!pck.properties.includes(newVal)) {
+            pck.properties.push(newVal);
+          }
+        } else {
+          newProps[idx] = { ...newProps[idx], value: newVal };
+        }
         return { ...f, properties: newProps };
+      }
+      return f;
+    });
+    setPck({ ...pck, files: newFiles });
+  };
+
+  const handleAddProperty = () => {
+    if (!pck || !selectedAssetId) return;
+    playPressSound();
+    const newFiles = pck.files.map(f => {
+      if (f.id === selectedAssetId) {
+        return {
+          ...f,
+          properties: [...f.properties, { key: "NEW_PROPERTY", value: "0" }]
+        };
+      }
+      return f;
+    });
+    setPck({ ...pck, files: newFiles });
+  };
+
+  const handleRemoveProperty = (idx: number) => {
+    if (!pck || !selectedAssetId) return;
+    playBackSound();
+    const newFiles = pck.files.map(f => {
+      if (f.id === selectedAssetId) {
+        const newProps = [...f.properties];
+        newProps.splice(idx, 1);
+        return { ...f, properties: newProps };
+      }
+      return f;
+    });
+    setPck({ ...pck, files: newFiles });
+  };
+
+  const handleTypeChange = (newType: PCKAssetType) => {
+    if (!pck || !selectedAssetId) return;
+    playPressSound();
+    const newFiles = pck.files.map(f => {
+      if (f.id === selectedAssetId) {
+        return { ...f, type: newType };
       }
       return f;
     });
@@ -272,6 +350,19 @@ export default function PckEditorView() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [playBackSound, setActiveView, isEditingProperty]);
 
+  const getTypeColor = (type: PCKAssetType) => {
+    switch (type) {
+      case PCKAssetType.SKIN: return "#FFFF55";
+      case PCKAssetType.CAPE: return "#AA00AA";
+      case PCKAssetType.TEXTURE: return "#55FFFF";
+      case PCKAssetType.AUDIO_DATA: return "#55FF55";
+      case PCKAssetType.UI_DATA: return "#FFAA00";
+      case PCKAssetType.LOCALISATION: return "#FF55FF";
+      case PCKAssetType.MODELS: return "#5555FF";
+      default: return "#AAAAAA";
+    }
+  };
+
   return (
     <motion.div
       ref={containerRef}
@@ -292,6 +383,13 @@ export default function PckEditorView() {
             style={{ backgroundImage: "url('/images/Button_Background.png')", backgroundSize: "100% 100%" }}
           >
             Open PCK
+          </button>
+          <button
+            onClick={handleNewPCK}
+            className="px-6 py-2 text-white mc-text-shadow transition-all hover:text-[#FFFF55] text-lg outline-none"
+            style={{ backgroundImage: "url('/images/Button_Background.png')", backgroundSize: "100% 100%" }}
+          >
+            New PCK
           </button>
           <button
             onClick={handleSavePCK}
@@ -339,7 +437,10 @@ export default function PckEditorView() {
           <div className="w-1/3 flex flex-col p-6 overflow-y-auto" style={{ backgroundImage: "url('/images/frame_background.png')", backgroundSize: "100% 100%", imageRendering: "pixelated" }}>
             <AnimatePresence mode="wait">
               {!selectedAsset ? (
-                <div className="flex-1 flex items-center justify-center text-white/20 italic">Select an asset</div>
+                <div className="flex-1 flex flex-col items-center justify-center text-white/20 italic gap-4">
+                  <img src="/images/tools/pck.png" className="w-16 h-16 opacity-10 grayscale" style={{ imageRendering: "pixelated" }} />
+                  <span>Select an asset to view details</span>
+                </div>
               ) : (
                 <motion.div
                   key={selectedAsset.id}
@@ -348,9 +449,76 @@ export default function PckEditorView() {
                   className="flex flex-col h-full"
                 >
                   <div className="flex justify-between items-start mb-4 border-b border-[#373737] pb-2">
-                    <h3 className="text-[#FFFF55] text-xl mc-text-shadow truncate pr-4">
-                      {selectedAsset.path.split("/").pop()}
-                    </h3>
+                    <div className="flex flex-col gap-1 min-w-0 flex-1 pr-4">
+                      <h3 className="text-[#FFFF55] text-xl mc-text-shadow truncate">
+                        {selectedAsset.path.split("/").pop()}
+                      </h3>
+                      <div className="relative">
+                        <button
+                          onClick={() => setIsChangingType(!isChangingType)}
+                          className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-sm transition-all group/type"
+                        >
+                          <span className="text-[10px] uppercase tracking-widest mc-text-shadow font-bold" style={{ color: getTypeColor(selectedAsset.type) }}>
+                            {PCKAssetType[selectedAsset.type].replace(/_/g, " ")}
+                          </span>
+                          <img
+                            src="/images/Settings_Arrow_Down.png"
+                            className={`w-2 h-2 object-contain opacity-40 group-hover/type:opacity-60 transition-transform ${isChangingType ? "rotate-180" : ""}`}
+                            style={{ imageRendering: "pixelated" }}
+                          />
+                        </button>
+
+                        <AnimatePresence>
+                          {isChangingType && (
+                            <>
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-[120]"
+                                onClick={() => setIsChangingType(false)}
+                              />
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                className="absolute top-full left-0 mt-2 z-[130] p-2 min-w-[180px] grid grid-cols-1 gap-1 shadow-2xl"
+                                style={{
+                                  backgroundImage: "url('/images/frame_background.png')",
+                                  backgroundSize: "100% 100%",
+                                  imageRendering: "pixelated"
+                                }}
+                              >
+                                {Object.keys(PCKAssetType)
+                                  .filter(k => isNaN(Number(k)))
+                                  .map((typeName) => {
+                                    const typeVal = PCKAssetType[typeName as keyof typeof PCKAssetType];
+                                    const isActive = selectedAsset.type === typeVal;
+                                    return (
+                                      <button
+                                        key={typeName}
+                                        onClick={() => {
+                                          handleTypeChange(typeVal);
+                                          setIsChangingType(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-[10px] uppercase tracking-widest transition-all border-l-2 ${isActive
+                                          ? "bg-white/10 border-[#FFFF55] text-white"
+                                          : "border-transparent text-white/40 hover:text-white/80 hover:bg-white/5"
+                                          }`}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getTypeColor(typeVal) }} />
+                                          {typeName.replace(/_/g, " ")}
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                              </motion.div>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => handleMoveAsset('up')} className="hover:scale-110 active:scale-95 transition-transform">
                         <img src="/images/Settings_Arrow_Up.png" className="w-4 h-4 object-contain" style={{ imageRendering: "pixelated" }} />
@@ -362,19 +530,47 @@ export default function PckEditorView() {
                   </div>
 
                   {assetPreviewUrl && (
-                    <div className="w-full h-40 bg-black/40 border-2 border-[#373737] mb-6 flex items-center justify-center overflow-hidden">
-                      <img src={assetPreviewUrl} className="max-w-full max-h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                    <div className="w-full h-64 bg-black/40 border-2 border-[#373737] mb-6 flex items-center justify-center overflow-hidden relative group">
+                      {(selectedAsset.type === PCKAssetType.SKIN || selectedAsset.type === PCKAssetType.CAPE) ? (
+                        <SkinPreview3D asset={selectedAsset} className="w-full h-full" />
+                      ) : (
+                        <img src={assetPreviewUrl} className="max-w-full max-h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                      )}
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 px-2 py-1 rounded text-[10px] text-white/60 pointer-events-none uppercase tracking-widest">
+                        {selectedAsset.type === PCKAssetType.SKIN ? "3D Skin View" : selectedAsset.type === PCKAssetType.CAPE ? "3D Cape View" : "Texture Preview"}
+                      </div>
                     </div>
                   )}
 
                   <div className="space-y-6 flex-1">
                     <div>
-                      <div className="text-white/40 text-[10px] uppercase tracking-widest mb-2 px-1">Metadata Properties</div>
-                      <div className="space-y-3">
+                      <div className="flex justify-between items-end mb-2 px-1">
+                        <div className="text-white/40 text-[10px] uppercase tracking-widest text-[#FFFF55]/60">Metadata Properties</div>
+                        <button
+                          onClick={handleAddProperty}
+                          className="text-[#FFFF55] text-[10px] uppercase hover:underline"
+                        >
+                          + Add Property
+                        </button>
+                      </div>
+                      <div className="space-y-4">
                         {selectedAsset.properties.map((prop, idx) => (
-                          <div key={idx} className="flex flex-col gap-1">
-                            <span className="text-white/40 text-[10px] px-1">{prop.key}</span>
-                            <div className="relative group">
+                          <div key={idx} className="flex flex-col gap-1 group/prop">
+                            <div className="flex justify-between items-center px-1">
+                              <input
+                                type="text"
+                                value={prop.key}
+                                onChange={(e) => handlePropertyEdit(idx, e.target.value, true)}
+                                className="bg-transparent text-white/40 text-[10px] outline-none hover:text-white/60 focus:text-[#FFFF55] w-2/3"
+                              />
+                              <button
+                                onClick={() => handleRemoveProperty(idx)}
+                                className="text-red-500/0 group-hover/prop:text-red-500/40 hover:text-red-500 transition-colors text-[10px] uppercase"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            <div className="relative">
                               <input
                                 type="text"
                                 value={prop.value}
@@ -382,10 +578,55 @@ export default function PckEditorView() {
                                 className="w-full bg-black/40 p-2 text-white border border-[#373737] text-sm focus:border-[#FFFF55] outline-none transition-colors"
                               />
                             </div>
+
+                            {prop.key === "ANIM" && (
+                              <div className="mt-2 p-3 bg-black/30 border border-[#373737]/50 grid grid-cols-2 gap-x-4 gap-y-2">
+                                {[
+                                  { label: "Slim Format", flag: 1 << 19 },
+                                  { label: "Modern Wide", flag: 1 << 18 },
+                                  { label: "Hide Hat", flag: 1 << 16 },
+                                  { label: "Hide Head", flag: 1 << 10 },
+                                  { label: "Hide Body", flag: 1 << 13 },
+                                  { label: "Hide Right Arm", flag: 1 << 11 },
+                                  { label: "Hide Left Arm", flag: 1 << 12 },
+                                  { label: "Hide Right Leg", flag: 1 << 14 },
+                                  { label: "Hide Left Leg", flag: 1 << 15 },
+                                  { label: "Hide Jacket", flag: 1 << 24 },
+                                  { label: "Hide Right Sleeve", flag: 1 << 21 },
+                                  { label: "Hide Left Sleeve", flag: 1 << 20 },
+                                  { label: "Hide Right Pant", flag: 1 << 23 },
+                                  { label: "Hide Left Pant", flag: 1 << 22 },
+                                  { label: "Zombie Arms", flag: 1 << 1 },
+                                  { label: "Upside Down", flag: 1 << 31 },
+                                ].map((item) => {
+                                  const currentVal = parseInt(prop.value) || 0;
+                                  const isChecked = (currentVal & item.flag) !== 0;
+                                  return (
+                                    <label key={item.label} className="flex items-center gap-2 cursor-pointer group/flag">
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={(e) => {
+                                          const newVal = e.target.checked
+                                            ? currentVal | item.flag
+                                            : currentVal & ~item.flag;
+                                          handlePropertyEdit(idx, newVal.toString());
+                                        }}
+                                        className="hidden"
+                                      />
+                                      <div className={`w-3 h-3 border transition-colors ${isChecked ? "bg-[#FFFF55] border-[#FFFF55]" : "border-white/20 group-hover/flag:border-white/40"}`} />
+                                      <span className={`text-[9px] uppercase tracking-tight ${isChecked ? "text-[#FFFF55]" : "text-white/40 group-hover/flag:text-white/60"}`}>
+                                        {item.label}
+                                      </span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         ))}
                         {selectedAsset.properties.length === 0 && (
-                          <div className="text-white/20 italic text-sm px-1">No metadata properties available</div>
+                          <div className="text-white/20 italic text-sm px-1 py-4 border-2 border-dashed border-[#373737] text-center">No metadata properties</div>
                         )}
                       </div>
                     </div>
@@ -444,7 +685,7 @@ export default function PckEditorView() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed top-12 right-12 z-50 p-6 flex flex-col items-center justify-center min-w-[240px]"
+            className="fixed top-12 right-12 z-[110] p-6 flex flex-col items-center justify-center min-w-[240px]"
             style={{
               backgroundImage: "url('/images/frame_background.png')",
               backgroundSize: "100% 100%",
@@ -455,6 +696,52 @@ export default function PckEditorView() {
               {notification.message}
             </span>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showTypeModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => setShowTypeModal(null)}
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md p-8 flex flex-col items-center"
+              style={{
+                backgroundImage: "url('/images/frame_background.png')",
+                backgroundSize: "100% 100%",
+                imageRendering: "pixelated"
+              }}
+            >
+              <h3 className="text-2xl text-[#FFFF55] mc-text-shadow font-bold mb-6 tracking-widest uppercase">Select Asset Type</h3>
+              <div className="grid grid-cols-2 gap-4 w-full">
+                {Object.keys(PCKAssetType)
+                  .filter(k => isNaN(Number(k)))
+                  .map((typeName) => (
+                    <button
+                      key={typeName}
+                      onClick={() => confirmAddAsset(PCKAssetType[typeName as keyof typeof PCKAssetType])}
+                      className="py-3 px-4 text-white mc-text-shadow text-sm transition-all hover:text-[#FFFF55] border-2 border-transparent hover:border-[#FFFF55]/30 bg-black/40"
+                    >
+                      {typeName.replace(/_/g, " ")}
+                    </button>
+                  ))}
+              </div>
+              <button
+                onClick={() => setShowTypeModal(null)}
+                className="mt-8 px-8 py-2 text-white/60 mc-text-shadow text-sm hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </motion.div>
