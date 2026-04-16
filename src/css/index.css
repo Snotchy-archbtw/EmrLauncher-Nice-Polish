@@ -38,6 +38,10 @@
   cursor: not-allowed;
 }
 
+* {
+  cursor: url('/images/pointer.png') 16 16, auto;
+}
+
 body {
   margin: 0;
   background-color: #000;
@@ -96,7 +100,6 @@ body {
   background: url('/images/Slider_Handle.png') no-repeat center;
   background-size: 100% 100%;
   image-rendering: pixelated;
-  cursor: pointer;
   min-height: 44px;
 }
 
@@ -118,7 +121,6 @@ body {
   background: url('/images/Slider_Handle.png') no-repeat center;
   background-size: 100% 100%;
   image-rendering: pixelated;
-  cursor: pointer;
   min-height: 44px;
 }
 

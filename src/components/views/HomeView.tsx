@@ -182,7 +182,7 @@ const HomeView = memo(function HomeView() {
                 setShowCredits(true);
               }
             }}
-            className={`text-white hover:text-[#FFFF55] text-xl mc-text-shadow tracking-widest transition-colors mt-1 bg-transparent border-none outline-none ${!isFocusedSection ? "cursor-default pointer-events-none" : ""}`}
+            className={`text-white hover:text-[#FFFF55] text-xl mc-text-shadow tracking-widest transition-colors mt-1 bg-transparent border-none outline-none ${!isFocusedSection ? "pointer-events-none" : ""}`}
           >
             EMERALD TEAM
           </button>
