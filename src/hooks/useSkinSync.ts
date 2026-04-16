@@ -107,8 +107,8 @@ export function useSkinSync({ profile, editions }: UseSkinSyncProps) {
               ],
             },
             {
-              id: "dlcskin00000001",
-              path: "dlcskin00000001.png",
+              id: "dlcskin99999999",
+              path: "dlcskin99999999.png",
               type: PCKAssetType.SKIN,
               size: skinBuf.byteLength,
               data: new Uint8Array(skinBuf),
@@ -136,7 +136,7 @@ export function useSkinSync({ profile, editions }: UseSkinSyncProps) {
                 },
                 {
                   key: "CAPEPATH",
-                  value: "dlccape00000001.png",
+                  value: "dlccape99999999.png",
                 },
               ],
             },
@@ -144,8 +144,8 @@ export function useSkinSync({ profile, editions }: UseSkinSyncProps) {
 
           if (capeBuf) {
             files.push({
-              id: "dlccape00000001",
-              path: "dlccape00000001.png",
+              id: "dlccape99999999",
+              path: "dlccape99999999.png",
               type: PCKAssetType.CAPE,
               size: capeBuf.byteLength,
               data: new Uint8Array(capeBuf),
