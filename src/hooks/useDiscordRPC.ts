@@ -52,6 +52,13 @@ export function useDiscordRPC({
           devtools: "Developing for LCE",
           skins: "Changing Skins",
           workshop: "Browsing Workshop",
+          "pck-editor": "Editing a PCK file",
+          "options-editor": "Editing Options Files",
+          "arc-editor": "Editing an ARC file",
+          "loc-editor": "Editing Localisation Files",
+          screenshots: "Browsing Screenshots",
+          "col-editor": "Editing Color Files",
+          "grf-editor": "Editing Game Rules",
         };
         details = tabNames[activeView] || "In Menus";
       }
