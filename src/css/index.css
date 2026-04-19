@@ -132,3 +132,96 @@ body {
   transition: none !important;
   animation: none !important;
 }
+
+.workshop-markdown h1, 
+.workshop-markdown h2, 
+.workshop-markdown h3 {
+  color: #FFFF55;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.workshop-markdown strong {
+  color: #FFFF55;
+}
+
+.workshop-markdown ul, 
+.workshop-markdown ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.workshop-markdown li {
+  margin-bottom: 0.25rem;
+}
+
+.workshop-markdown a {
+  color: #55FFFF;
+  text-decoration: underline;
+}
+
+.workshop-markdown code {
+  background: rgba(0,0,0,0.4);
+  padding: 2px 4px;
+  border-radius: 2px;
+  color: #FF55FF;
+}
+
+.workshop-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  background: rgba(0,0,0,0.3);
+  border: 2px solid #555;
+  image-rendering: pixelated;
+}
+
+.workshop-markdown th {
+  background: rgba(0,0,0,0.5);
+  color: #FFFF55;
+  padding: 8px;
+  border: 1px solid #444;
+  text-align: left;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.workshop-markdown td {
+  padding: 8px;
+  border: 1px solid #333;
+  color: #E0E0E0;
+  font-size: 0.9rem;
+}
+
+.workshop-markdown tr:nth-child(even) {
+  background: rgba(255,255,255,0.05);
+}
+
+.workshop-markdown blockquote {
+  border-left: 4px solid #555555;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #A0A0A0;
+  font-style: italic;
+  background: rgba(255,255,255,0.02);
+}
+
+.workshop-markdown del {
+  color: #AA0000;
+  text-decoration: line-through;
+}
+
+.workshop-markdown input[type="checkbox"] {
+  accent-color: #FFFF55;
+  margin-right: 0.5rem;
+  transform: scale(1.2);
+  vertical-align: middle;
+}
+
+.workshop-markdown hr {
+  border: none;
+  border-top: 2px solid #373737;
+  margin: 1.5rem 0;
+}

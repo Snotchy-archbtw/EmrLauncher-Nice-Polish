@@ -1,5 +1,7 @@
 import { useState, useEffect, memo, useCallback, useRef, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useUI, useAudio, useConfig, GameContext } from '../../context/LauncherContext';
 import { TauriService } from '../../services/TauriService';
 
@@ -14,6 +16,7 @@ interface RegistryPackage {
   name: string;
   author: string;
   description: string;
+  extended_description?: string;
   category: string[];
   thumbnail: string;
   zips: Record<string, string>;
@@ -451,9 +454,20 @@ function PackageModal({ pkg, onClose, playPressSound }: {
           </div>
 
           <div className="flex flex-col p-6 gap-6 overflow-y-auto flex-1">
-            <div className="space-y-2">
-              <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">Project Description</span>
-              <p className="text-sm text-[#C0C0C0] mc-text-shadow leading-relaxed italic opacity-90">{pkg.description}</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-[0.2em] font-bold">Project Description</span>
+                <p className="text-sm text-[#C0C0C0] mc-text-shadow leading-relaxed italic opacity-90">{pkg.description}</p>
+              </div>
+
+              {pkg.extended_description && pkg.extended_description.trim() !== "" && (
+                <div className="space-y-2 bg-black/20 p-4 border border-[#333] rounded-sm">
+                  <span className="text-[10px] text-[#555] mc-text-shadow uppercase tracking-[0.2em] font-bold">Additional Resources</span>
+                  <div className="text-sm text-[#A0A0A0] mc-text-shadow leading-relaxed workshop-markdown">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{pkg.extended_description}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-8 pt-4 border-t border-[#333]">
