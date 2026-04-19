@@ -14,7 +14,7 @@
   <a href="https://ko-fi.com/kayjann">
     <img src="https://img.shields.io/badge/ko--fi-Donate%20to%20the%20Project-grey?style=for-the-badge&logo=kofi&logoColor=white&labelColor=FF5E5B" alt="Donate to the Project">
   </a>
-  <a href="https://discord.gg/vD8akRU24f">
+  <a href="https://discord.gg/NPMp9JhGYH">
     <img src="https://img.shields.io/badge/discord-Join%20the%20Community-grey?style=for-the-badge&logo=discord&logoColor=white&labelColor=5865F2" alt="Join the Community">
   </a>
 </p>
