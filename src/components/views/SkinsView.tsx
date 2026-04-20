@@ -589,7 +589,7 @@ const SkinsView = memo(function SkinsView() {
                     value={skin.name}
                     maxLength={16}
                     onChange={(e) => handleNameChange(skin.id, e.target.value)}
-                    className={`bg-transparent text-center outline-none border-none text-base mc-text-shadow w-full truncate transition-colors ${isActive || isFocused ? "text-[#FFFF55]" : "text-white"} ${isDefaultSkin(skin.id) ? "pointer-events-none" : ""}`}
+                    className={`bg-transparent text-center outline-none border-none text-base mc-text-shadow w-full truncate transition-colors relative z-10 ${isActive || isFocused ? "text-[#FFFF55]" : "text-white"} ${isDefaultSkin(skin.id) ? "pointer-events-none" : ""}`}
                     onClick={(e) => e.stopPropagation()}
                     spellCheck={false}
                     readOnly={isDefaultSkin(skin.id)}
@@ -677,7 +677,7 @@ const SkinsView = memo(function SkinsView() {
                       onChange={(e) =>
                         handleCapeNameChange(cape.id, e.target.value)
                       }
-                      className={`bg-transparent text-center outline-none border-none text-base mc-text-shadow w-full truncate transition-colors ${isActive || isFocused ? "text-[#FFFF55]" : "text-white"}`}
+                      className={`bg-transparent text-center outline-none border-none text-base mc-text-shadow w-full truncate transition-colors relative z-10 ${isActive || isFocused ? "text-[#FFFF55]" : "text-white"}`}
                       onClick={(e) => e.stopPropagation()}
                       spellCheck={false}
                     />
@@ -774,7 +774,7 @@ const SkinsView = memo(function SkinsView() {
                   onFocus={() => setModalFocusIndex(0)}
                   autoFocus
                   spellCheck={false}
-                  className={`w-full h-12 bg-black/50 border-2 text-white px-4 text-xl outline-none transition-colors ${modalFocusIndex === 0 ? "border-[#FFFF55]" : "border-[#373737]"}`}
+                  className={`w-full h-12 bg-black/50 border-2 text-white px-4 text-xl outline-none transition-colors relative z-10 ${modalFocusIndex === 0 ? "border-[#FFFF55]" : "border-[#373737]"}`}
                 />
 
                 {importError && (
