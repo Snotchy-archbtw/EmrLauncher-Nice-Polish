@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TauriService, Runner } from "../../services/TauriService";
 import { usePlatform } from "../../hooks/usePlatform";
 import { useConfig, useAudio, useGame } from "../../context/LauncherContext";
-
 interface SetupViewProps {
   onComplete: () => void;
 }
@@ -20,12 +19,11 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
     linuxRunner: configLinuxRunner,
     vfxEnabled: configVfx,
     rpcEnabled: configRpc,
+    animationsEnabled,
   } = useConfig();
   const { playPressSound, playSfx } = useAudio();
-
   const { editions } = useGame();
   const titleImage = editions.find(e => e.id === profile)?.titleImage || "/images/MenuTitle.png";
-
   const [currentStep, setCurrentStep] = useState(0);
   const [focusIndex, setFocusIndex] = useState(0);
   const [tempUsername, setTempUsername] = useState(username);
@@ -34,12 +32,9 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
   const [isSettingUpRuntime, setIsSettingUpRuntime] = useState(false);
   const [setupProgress, setSetupProgress] = useState<{ stage: string; message: string; percent?: number } | null>(null);
   const [runtimeAlreadyInstalled, setRuntimeAlreadyInstalled] = useState(false);
-
   const [enableVfx, setEnableVfx] = useState(configVfx);
   const [enableDiscordRPC, setEnableDiscordRPC] = useState(configRpc);
-
-  const totalSteps = isLinux ? 4 : 4;
-
+  const totalSteps = 4;
   useEffect(() => {
     if (isLinux || isMac) {
       TauriService.getAvailableRunners().then(availableRunners => {
@@ -52,9 +47,7 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
 
     if (isMac) {
       checkMacOSRuntime();
-
       const unlisten = TauriService.onMacosProgress((progress) => {
-        console.log("[macOS Setup Progress]", progress);
         setSetupProgress(progress);
       });
 
@@ -67,31 +60,22 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
   const checkMacOSRuntime = async () => {
     try {
       const localStorageInstalled = localStorage.getItem('lce-macos-runtime-installed') === 'true';
-
       if (localStorageInstalled) {
-        console.log("[macOS Runtime] Using cached installation status");
         try {
           const runtimeCheck = await TauriService.checkMacOSRuntimeInstalledFast();
           if (runtimeCheck) {
             setRuntimeAlreadyInstalled(true);
-            return;
           } else {
-            console.log("[macOS Runtime] Cache was wrong, clearing");
             localStorage.removeItem('lce-macos-runtime-installed');
             setRuntimeAlreadyInstalled(false);
-            return;
           }
-        } catch (error) {
-          console.log("[macOS Runtime] Fast check failed, using cache");
+        } catch {
           setRuntimeAlreadyInstalled(true);
-          return;
         }
       } else {
-        console.log("[macOS Runtime] No installation detected");
         setRuntimeAlreadyInstalled(false);
       }
-    } catch (error) {
-      console.error("[macOS Runtime] Error checking:", error);
+    } catch {
       setRuntimeAlreadyInstalled(false);
     }
   };
@@ -103,21 +87,17 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
 
   const handleNext = async () => {
     playPressSound();
-
     if (currentStep === 0) {
       setUsername(tempUsername);
       setCurrentStep(1);
       setFocusIndex(0);
     } else if (currentStep === 1) {
-      if (isLinux && selectedRunner) {
-        setLinuxRunner(selectedRunner);
-      }
+      if (isLinux && selectedRunner) setLinuxRunner(selectedRunner);
       setCurrentStep(2);
       setFocusIndex(0);
     } else if (currentStep === 2) {
       setConfigVfx(enableVfx);
       setConfigRpc(enableDiscordRPC);
-
       setCurrentStep(3);
       setFocusIndex(0);
     } else if (currentStep === 3) {
@@ -137,16 +117,14 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      // Elements count per step
       let count = 0;
-      if (currentStep === 0) count = 2; // Input, Next
+      if (currentStep === 0) count = 2;
       else if (currentStep === 1) {
-        if (isLinux) count = runners.length + 2; // Runners, Back, Next
-        else if (isMac) count = 3; // Install, Back, Next
-        else count = 2; // Back, Next
-      } else if (currentStep === 2) count = 4; // 2 Toggles, Back, Next
-      else if (currentStep === 3) count = 2; // Back, Finish
-
+        if (isLinux) count = runners.length + 2;
+        else if (isMac) count = 3;
+        else count = 2;
+      } else if (currentStep === 2) count = 4;
+      else if (currentStep === 3) count = 2;
       if (e.key === "ArrowDown" || e.key === "Tab") {
         e.preventDefault();
         setFocusIndex((prev) => (prev + 1) % count);
@@ -154,10 +132,9 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
         e.preventDefault();
         setFocusIndex((prev) => (prev - 1 + count) % count);
       } else if (e.key === "Enter") {
-        // Handle enter based on focusIndex and step
         if (currentStep === 0) {
-          if (focusIndex === 0) handleNext(); // For input field
-          else if (focusIndex === 1) handleNext(); // Next button
+          if (focusIndex === 0) handleNext();
+          else if (focusIndex === 1) handleNext();
         } else if (currentStep === 1) {
           if (isLinux) {
             if (focusIndex < runners.length) handleRunnerSelect(runners[focusIndex].id);
@@ -190,37 +167,36 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
     playPressSound();
     setIsSettingUpRuntime(true);
     setSetupProgress({ stage: "preparing", message: "Preparing macOS runtime setup...", percent: 0 });
-
     try {
-      console.log("[macOS Setup] Starting runtime installation...");
       await TauriService.setupMacosRuntime();
-      console.log("[macOS Setup] Runtime installation completed successfully!");
       setSetupProgress({ stage: "completed", message: "Setup completed successfully!", percent: 100 });
-
       localStorage.setItem('lce-macos-runtime-installed', 'true');
       setRuntimeAlreadyInstalled(true);
-
       setTimeout(() => {
         setCurrentStep(2);
         setIsSettingUpRuntime(false);
         setSetupProgress(null);
       }, 2000);
     } catch (e) {
-      console.error("[macOS Setup] Error:", e);
       setSetupProgress({ stage: "error", message: `Setup failed: ${e}`, percent: 0 });
       setIsSettingUpRuntime(false);
     }
   };
 
   const canProceed = () => {
-    if (currentStep === 0) {
-      return tempUsername.trim().length > 0;
-    }
-    if (currentStep === 1 && isMac) {
-      return runtimeAlreadyInstalled;
-    }
+    if (currentStep === 0) return tempUsername.trim().length > 0;
+    if (currentStep === 1 && isMac) return runtimeAlreadyInstalled;
     return true;
   };
+
+  const stepTitles = ["Welcome", "Compatibility", "Preferences", "Ready"];
+  const navBtnStyle = (isFocused: boolean) => ({
+    backgroundImage: isFocused
+      ? "url('/images/button_highlighted.png')"
+      : "url('/images/Button_Background.png')",
+    backgroundSize: "100% 100%",
+    imageRendering: "pixelated" as const,
+  });
 
   return (
     <div className="w-full h-full flex items-center justify-center bg-black">
@@ -240,300 +216,327 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: useConfig().animationsEnabled ? 0.2 : 0 }}
-            className="max-w-2xl w-full mx-auto flex flex-col"
+            transition={{ duration: animationsEnabled ? 0.2 : 0 }}
+            className="max-w-xl w-full mx-auto flex flex-col items-center"
           >
-            <div className="relative p-8 flex flex-col"
+            <div
+              className="relative p-8 flex flex-col w-full"
               style={{
                 backgroundImage: "url('/images/frame_background.png')",
                 backgroundSize: "100% 100%",
                 backgroundRepeat: "no-repeat",
                 imageRendering: "pixelated",
-                transformOrigin: "center center",
                 maxHeight: "85vh",
-              }}>
-              <div className="overflow-y-auto flex-1" style={{ scrollbarWidth: "thin", scrollbarColor: "#555 transparent" }}>
-                <div className="flex justify-center space-x-2 mb-8">
-                  {Array.from({ length: totalSteps }, (_, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: useConfig().animationsEnabled ? i * 0.05 : 0 }}
-                      className={`h-2 w-16 transition-all ${i <= currentStep ? "bg-white" : "bg-white/20"
-                        }`}
-                    />
-                  ))}
-                </div>
+              }}
+            >
+              <div className="flex justify-center gap-3 mb-6">
+                {Array.from({ length: totalSteps }, (_, i) => (
+                  <div
+                    key={i}
+                    className={`h-1.5 w-12 transition-all duration-300 ${i <= currentStep ? "bg-white" : "bg-white/20"}`}
+                  />
+                ))}
+              </div>
+              <h2 className="text-2xl text-white mc-text-shadow mb-1 border-b-2 border-[#373737] pb-2 text-center tracking-widest uppercase opacity-80 font-bold">
+                {stepTitles[currentStep]}
+              </h2>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`content-${currentStep}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: animationsEnabled ? 0.2 : 0, delay: animationsEnabled ? 0.05 : 0 }}
+                  className="mt-4 overflow-y-auto flex-1"
+                  style={{ scrollbarWidth: "thin", scrollbarColor: "#555 transparent" }}
+                >
 
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`content-${currentStep}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: useConfig().animationsEnabled ? 0.3 : 0, delay: useConfig().animationsEnabled ? 0.1 : 0 }}
-                  >
-                    {currentStep === 0 && (
-                      <div className="text-center">
-                        <h2 className="text-3xl font-bold mb-6 text-white" style={{ textShadow: "2px 2px 0px rgba(0,0,0,0.8)" }}>
-                          Welcome to Emerald Launcher
-                        </h2>
-                        <p className="text-lg mb-8 text-white/80">Let's configure your launcher</p>
+                  {currentStep === 0 && (
+                    <div
+                      className="p-5 flex flex-col gap-4"
+                      style={{
+                        backgroundImage: "url('/images/background.png')",
+                        backgroundSize: "100% 100%",
+                        imageRendering: "pixelated",
+                      }}
+                    >
+                      <p className="text-white/70 text-sm tracking-widest text-center uppercase">
+                        Let's configure your launcher
+                      </p>
+                      <label className="block">
+                        <span className="text-white font-bold uppercase tracking-widest text-sm mc-text-shadow block mb-2">Username</span>
+                        <input
+                          type="text"
+                          value={tempUsername}
+                          onChange={(e) => setTempUsername(e.target.value)}
+                          onFocus={() => setFocusIndex(0)}
+                          className={`w-full px-4 py-2 bg-black/60 focus:outline-none transition-colors text-white tracking-widest
+                            ${focusIndex === 0 ? "border-2 border-[#FFFF55] text-[#FFFF55]" : "border-2 border-white/30"}`}
+                          style={{ imageRendering: "pixelated", fontFamily: "'Mojangles', monospace" }}
+                          placeholder="Enter your username"
+                          maxLength={16}
+                          autoFocus
+                        />
+                      </label>
+                      {tempUsername.trim().length === 0 && (
+                        <p className="text-white/40 text-xs text-center uppercase tracking-widest">A username is required to continue</p>
+                      )}
+                    </div>
+                  )}
 
-                        <div className="space-y-4">
-                          <label className="block text-left">
-                            <span className="text-white font-bold mb-2 block">Username</span>
-                            <input
-                              type="text"
-                              value={tempUsername}
-                              onChange={(e) => setTempUsername(e.target.value)}
-                              onFocus={() => setFocusIndex(0)}
-                              className={`w-full px-4 py-3 bg-black/50 border-2 focus:outline-none transition-colors ${focusIndex === 0 ? "border-yellow-400" : "border-white"}`}
-                              placeholder="Enter your username"
-                              maxLength={16}
-                              autoFocus
-                            />
-                          </label>
+                  {currentStep === 1 && isMac && (
+                    <div
+                      className="p-5 flex flex-col gap-4"
+                      style={{
+                        backgroundImage: "url('/images/background.png')",
+                        backgroundSize: "100% 100%",
+                        imageRendering: "pixelated",
+                      }}
+                    >
+                      <p className="text-white/70 text-xs tracking-widest text-center uppercase">
+                        {runtimeAlreadyInstalled
+                          ? "Compatibility runtime is already installed"
+                          : "Emerald needs a compatibility runtime to run on macOS"
+                        }
+                      </p>
+
+                      <div className={`flex items-center gap-3 p-3 border-2 ${runtimeAlreadyInstalled ? "border-green-400/60 bg-green-900/10" : "border-yellow-400/60 bg-yellow-900/10"}`}>
+                        <span className={`text-xl ${runtimeAlreadyInstalled ? "text-green-400" : "text-yellow-400"}`}>
+                          {runtimeAlreadyInstalled ? "✓" : "⚠"}
+                        </span>
+                        <div>
+                          <p className={`font-bold text-sm uppercase tracking-widest ${runtimeAlreadyInstalled ? "text-green-400" : "text-yellow-400"}`}>
+                            {runtimeAlreadyInstalled ? "Runtime Detected" : "Runtime Not Detected"}
+                          </p>
+                          <p className="text-white/60 text-xs mt-0.5">
+                            {runtimeAlreadyInstalled
+                              ? "Ready to use — you can proceed."
+                              : "You must install the runtime before proceeding."}
+                          </p>
                         </div>
                       </div>
-                    )}
 
-                    {currentStep === 1 && isMac && (
-                      <div className="text-center">
-                        <h2 className="text-3xl font-bold mb-6 text-white" style={{ textShadow: "2px 2px 0px rgba(0,0,0,0.8)" }}>
-                          macOS Compatibility
-                        </h2>
-                        <p className="text-lg mb-6 text-white/80">
-                          {runtimeAlreadyInstalled
-                            ? "Emerald compatibility runtime is already installed"
-                            : "Emerald needs compatibility runtime for macOS"
-                          }
-                        </p>
-
-                        {setupProgress && (
-                          <div className="mb-4 p-4 bg-black/50 border border-white/20 rounded">
-                            <p className="text-sm font-bold text-yellow-400 mb-2">{setupProgress.stage.toUpperCase()}</p>
-                            <p className="text-xs opacity-80">{setupProgress.message}</p>
-                            {setupProgress.percent !== undefined && (
-                              <div className="w-full bg-white/20 h-2 rounded-full mt-3">
-                                <div
-                                  className="h-full bg-green-500 rounded-full transition-all duration-300"
-                                  style={{ width: `${setupProgress.percent}%` }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="space-y-4">
-                          <div className={`p-4 rounded-lg ${runtimeAlreadyInstalled
-                            ? "bg-green-600/20 border-2 border-green-400"
-                            : "bg-yellow-600/20 border-2 border-yellow-400"
-                            }`}>
-                            <p className={`font-bold mb-2 ${runtimeAlreadyInstalled ? "text-green-400" : "text-yellow-400"
-                              }`}>
-                              {runtimeAlreadyInstalled ? "✓ Runtime Detected" : "⚠ Runtime Not Detected"}
-                            </p>
-                            <p className="text-xs text-white/80">
-                              {runtimeAlreadyInstalled
-                                ? "The compatibility runtime is properly installed and ready to use."
-                                : "You must install the compatibility runtime before proceeding to the next step."
-                              }
-                            </p>
-                          </div>
-
-                          <button
-                            onClick={handleMacosSetup}
-                            onMouseEnter={() => setFocusIndex(0)}
-                            disabled={isSettingUpRuntime}
-                            className={`px-6 py-3 text-white font-bold bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 border-4 ${focusIndex === 0 ? "border-yellow-400" : "border-green-400"}`}
-                            style={{
-                              fontFamily: "'Mojangles', monospace",
-                              imageRendering: "pixelated",
-                              textShadow: "2px 2px 0px rgba(0,0,0,0.8)",
-                              boxShadow: "4px 4px 0px rgba(0,0,0,0.3)",
-                              fontSize: "16px",
-                              letterSpacing: "1px"
-                            }}
-                          >
-                            {isSettingUpRuntime ? "Installing..." : runtimeAlreadyInstalled ? "Reinstall Runtime" : "Install Runtime"}
-                          </button>
-
-                          {!runtimeAlreadyInstalled && (
-                            <p className="text-xs text-red-400 font-bold">
-                              ⚠ Installation required before proceeding to next step
-                            </p>
+                      {setupProgress && (
+                        <div className="p-3 bg-black/40 border border-white/10">
+                          <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-1">{setupProgress.stage}</p>
+                          <p className="text-white/70 text-xs">{setupProgress.message}</p>
+                          {setupProgress.percent !== undefined && (
+                            <div className="w-full bg-white/10 h-1.5 mt-2">
+                              <div
+                                className="h-full bg-green-400 transition-all duration-300"
+                                style={{ width: `${setupProgress.percent}%` }}
+                              />
+                            </div>
                           )}
                         </div>
+                      )}
+
+                      <div className="flex justify-center">
+                        <button
+                          onClick={handleMacosSetup}
+                          onMouseEnter={() => setFocusIndex(0)}
+                          disabled={isSettingUpRuntime}
+                          className={`w-[260px] h-10 flex items-center justify-center transition-colors mc-text-shadow outline-none border-none
+                            ${focusIndex === 0 ? "text-[#FFFF55]" : "text-white"} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          style={navBtnStyle(focusIndex === 0)}
+                        >
+                          <span className="tracking-widest uppercase text-lg">
+                            {isSettingUpRuntime ? "Installing..." : runtimeAlreadyInstalled ? "Reinstall Runtime" : "Install Runtime"}
+                          </span>
+                        </button>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {currentStep === 1 && isLinux && (
-                      <div className="text-center">
-                        <h2 className="text-3xl font-bold mb-6 text-white" style={{ textShadow: "2px 2px 0px rgba(0,0,0,0.8)" }}>
-                          Linux Compatibility
-                        </h2>
-                        <p className="text-lg mb-6 text-white/80">Choose your preferred compatibility layer</p>
+                  {currentStep === 1 && isLinux && (
+                    <div
+                      className="p-5 flex flex-col gap-3"
+                      style={{
+                        backgroundImage: "url('/images/background.png')",
+                        backgroundSize: "100% 100%",
+                        imageRendering: "pixelated",
+                      }}
+                    >
+                      <p className="text-white/70 text-xs tracking-widest text-center uppercase">
+                        Choose your preferred compatibility layer
+                      </p>
+                      {runners.length === 0 ? (
+                        <div className="p-3 border-2 border-yellow-400/50 bg-yellow-900/10">
+                          <p className="text-yellow-400 text-sm text-center">No compatible runners found. Please install Wine or Proton.</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {runners.map((runner, idx) => (
+                            <button
+                              key={runner.id}
+                              onClick={() => handleRunnerSelect(runner.id)}
+                              onMouseEnter={() => setFocusIndex(idx)}
+                              className={`w-full h-10 flex items-center justify-between px-4 transition-all outline-none border-none
+                                ${selectedRunner === runner.id ? "bg-white/10" : "bg-transparent"}
+                                ${focusIndex === idx ? "text-[#FFFF55]" : "text-white/80"} hover:text-[#FFFF55] hover:bg-black/10`}
+                              style={navBtnStyle(focusIndex === idx)}
+                            >
+                              <span className="tracking-widest uppercase text-lg mc-text-shadow">{runner.name}</span>
+                              {selectedRunner === runner.id && (
+                                <span className="text-[#FFFF55] text-sm">✓</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-white/40 text-center uppercase tracking-widest mt-1">You can change this later in settings</p>
+                    </div>
+                  )}
 
-                        {runners.length === 0 ? (
-                          <div className="p-4 bg-yellow-500/20 border-2 border-yellow-500/50">
-                            <p className="text-yellow-400">No compatible runners found. Please install Wine or Proton.</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {runners.map((runner, idx) => (
-                              <button
-                                key={runner.id}
-                                onClick={() => handleRunnerSelect(runner.id)}
-                                onMouseEnter={() => setFocusIndex(idx)}
-                                className={`w-full p-4 text-left border-2 transition-all duration-200 ${selectedRunner === runner.id
-                                  ? "bg-white/20 border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-                                  : "bg-black/50 border-white/20"
-                                  } ${focusIndex === idx ? "border-yellow-400" : ""}`}
-                              >
-                                <p className="font-bold text-white">{runner.name}</p>
-                                <p className="text-xs text-white/60 mt-1">{runner.type}</p>
-                              </button>
-                            ))}
+                  {currentStep === 1 && !isMac && !isLinux && (
+                    <div
+                      className="p-5 flex flex-col gap-4"
+                      style={{
+                        backgroundImage: "url('/images/background.png')",
+                        backgroundSize: "100% 100%",
+                        imageRendering: "pixelated",
+                      }}
+                    >
+                      <p className="text-white/70 text-xs tracking-widest text-center uppercase">
+                        Everything is ready to go!
+                      </p>
+                      <div className="flex items-center gap-3 p-3 border-2 border-green-400/60 bg-green-900/10">
+                        <span className="text-green-400 text-xl">✓</span>
+                        <div>
+                          <p className="text-green-400 font-bold text-sm uppercase tracking-widest">Windows Native Support</p>
+                          <p className="text-white/60 text-xs mt-0.5">Emerald Legacy runs natively on Windows without additional requirements.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentStep === 2 && (
+                    <div
+                      className="p-5 flex flex-col gap-2"
+                      style={{
+                        backgroundImage: "url('/images/background.png')",
+                        backgroundSize: "100% 100%",
+                        imageRendering: "pixelated",
+                      }}
+                    >
+                      <p className="text-white/70 text-xs tracking-widest text-center uppercase mb-2">
+                        Choose your preferred launcher settings
+                      </p>
+
+                      <button
+                        onClick={() => { playPressSound(); setEnableVfx(!enableVfx); }}
+                        onMouseEnter={() => setFocusIndex(0)}
+                        className={`w-full h-10 flex items-center justify-between px-4 transition-all outline-none border-none rounded
+                          ${focusIndex === 0 ? "bg-black/10" : "bg-transparent"} hover:bg-black/15`}
+                      >
+                        <span className={`tracking-widest uppercase text-lg mc-text-shadow ${focusIndex === 0 ? "text-[#FFFF55]" : "text-white/80"}`}>
+                          Click effects
+                        </span>
+                        <img
+                          src={enableVfx ? "/images/Toggle_Switch_On.png" : "/images/Toggle_Switch_Off.png"}
+                          alt={enableVfx ? "ON" : "OFF"}
+                          className="w-12 h-6 object-contain shrink-0"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                      </button>
+                      <button
+                        onClick={() => { playPressSound(); setEnableDiscordRPC(!enableDiscordRPC); }}
+                        onMouseEnter={() => setFocusIndex(1)}
+                        className={`w-full h-10 flex items-center justify-between px-4 transition-all outline-none border-none rounded
+                          ${focusIndex === 1 ? "bg-black/10" : "bg-transparent"} hover:bg-black/15`}
+                      >
+                        <span className={`tracking-widest uppercase text-lg mc-text-shadow ${focusIndex === 1 ? "text-[#FFFF55]" : "text-white/80"}`}>
+                          Discord RPC
+                        </span>
+                        <img
+                          src={enableDiscordRPC ? "/images/Toggle_Switch_On.png" : "/images/Toggle_Switch_Off.png"}
+                          alt={enableDiscordRPC ? "ON" : "OFF"}
+                          className="w-12 h-6 object-contain shrink-0"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                      </button>
+
+                      <p className="text-xs text-white/40 text-center uppercase tracking-widest mt-2">You can change these later in settings</p>
+                    </div>
+                  )}
+
+                  {currentStep === 3 && (
+                    <div
+                      className="p-5 flex flex-col gap-3"
+                      style={{
+                        backgroundImage: "url('/images/background.png')",
+                        backgroundSize: "100% 100%",
+                        imageRendering: "pixelated",
+                      }}
+                    >
+                      <p className="text-white/70 text-xs tracking-widest text-center uppercase">
+                        Emerald Launcher is now configured and ready to use!
+                      </p>
+
+                      <div className="flex flex-col gap-1 mt-1">
+                        <div className="flex items-center justify-between px-4 h-10 border-b border-white/10">
+                          <span className="text-white/60 text-sm uppercase tracking-widest">Username</span>
+                          <span className="text-[#FFFF55] font-bold mc-text-shadow">{tempUsername}</span>
+                        </div>
+                        {isMac && (
+                          <div className="flex items-center justify-between px-4 h-10 border-b border-white/10">
+                            <span className="text-white/60 text-sm uppercase tracking-widest">Runtime</span>
+                            <span className="text-green-400 font-bold">Ready</span>
                           </div>
                         )}
-
-                        <p className="text-xs mt-4 text-white/60">You can change this later in settings</p>
-                      </div>
-                    )}
-
-                    {currentStep === 1 && !isMac && !isLinux && (
-                      <div className="text-center">
-                        <h2 className="text-3xl font-bold mb-6 text-white" style={{ textShadow: "2px 2px 0px rgba(0,0,0,0.8)" }}>
-                          Windows Setup
-                        </h2>
-                        <p className="text-lg mb-6 text-white/80">Everything is ready to go!</p>
-                        <div className="text-green-400 font-bold">✓ Native compatibility</div>
-
-                        <div className="mt-6 p-4 bg-green-600/20 border-2 border-green-400 rounded-lg">
-                          <p className="text-green-400 font-bold mb-2">✓ Windows Native Support</p>
-                          <p className="text-xs text-white/80">Emerald Legacy runs natively on Windows without additional requirements.</p>
+                        {isLinux && selectedRunner && (
+                          <div className="flex items-center justify-between px-4 h-10 border-b border-white/10">
+                            <span className="text-white/60 text-sm uppercase tracking-widest">Runner</span>
+                            <span className="text-green-400 font-bold">{runners.find(r => r.id === selectedRunner)?.name}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between px-4 h-10 border-b border-white/10">
+                          <span className="text-white/60 text-sm uppercase tracking-widest">Click Effects</span>
+                          <img
+                            src={enableVfx ? "/images/Toggle_Switch_On.png" : "/images/Toggle_Switch_Off.png"}
+                            alt={enableVfx ? "ON" : "OFF"}
+                            className="w-10 h-5 object-contain"
+                            style={{ imageRendering: "pixelated" }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between px-4 h-10">
+                          <span className="text-white/60 text-sm uppercase tracking-widest">Discord RPC</span>
+                          <img
+                            src={enableDiscordRPC ? "/images/Toggle_Switch_On.png" : "/images/Toggle_Switch_Off.png"}
+                            alt={enableDiscordRPC ? "ON" : "OFF"}
+                            className="w-10 h-5 object-contain"
+                            style={{ imageRendering: "pixelated" }}
+                          />
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
 
-                    {currentStep === 2 && (
-                      <div className="text-center">
-                        <h2 className="text-3xl font-bold mb-6 text-white" style={{ textShadow: "2px 2px 0px rgba(0,0,0,0.8)" }}>
-                          Customize Your Experience
-                        </h2>
-                        <p className="text-lg mb-8 text-white/80">Choose your preferred launcher settings</p>
-
-                        <div className="space-y-4 max-w-md mx-auto">
-                          <div className="bg-black/50 border-2 border-white/20 p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="text-left">
-                                <p className="text-white font-bold">Click effects</p>
-                                <p className="text-xs text-white/60">Click particles and animations</p>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  playPressSound();
-                                  setEnableVfx(!enableVfx);
-                                }}
-                                onMouseEnter={() => setFocusIndex(0)}
-                                className={`w-12 h-6 outline-none border-none bg-transparent transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(250,204,21,0.3)] ${focusIndex === 0 ? "scale-110 shadow-[0_0_8px_rgba(250,204,21,0.6)]" : ""}`}
-                                style={{ imageRendering: "pixelated" }}
-                              >
-                                <img
-                                  src={enableVfx ? "/images/Toggle_Switch_On.png" : "/images/Toggle_Switch_Off.png"}
-                                  alt="Toggle"
-                                  className="w-full h-full object-contain"
-                                />
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="bg-black/50 border-2 border-white/20 p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="text-left">
-                                <p className="text-white font-bold">Discord Rich Presence</p>
-                                <p className="text-xs text-white/60">Show your Emerald Launcher status on Discord</p>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  playPressSound();
-                                  setEnableDiscordRPC(!enableDiscordRPC);
-                                }}
-                                onMouseEnter={() => setFocusIndex(1)}
-                                className={`w-12 h-6 outline-none border-none bg-transparent transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(250,204,21,0.3)] ${focusIndex === 1 ? "scale-110 shadow-[0_0_8px_rgba(250,204,21,0.6)]" : ""}`}
-                                style={{ imageRendering: "pixelated" }}
-                              >
-                                <img
-                                  src={enableDiscordRPC ? "/images/Toggle_Switch_On.png" : "/images/Toggle_Switch_Off.png"}
-                                  alt="Toggle"
-                                  className="w-full h-full object-contain"
-                                />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        <p className="text-xs mt-6 text-white/60">You can change these later in settings</p>
-                      </div>
-                    )}
-
-                    {currentStep === 3 && (
-                      <div className="text-center">
-                        <h2 className="text-3xl font-bold mb-6 text-white" style={{ textShadow: "2px 2px 0px rgba(0,0,0,0.8)" }}>
-                          Setup Complete!
-                        </h2>
-
-                        <div className="space-y-4 mb-8">
-                          <div className="text-left bg-black/50 border-2 border-white/20 p-4">
-                            <p className="text-white">Username: <span className="font-bold text-green-400">{tempUsername}</span></p>
-                            {isMac && (
-                              <p className="text-white">
-                                Runtime: <span className="font-bold text-green-400">Ready</span>
-                              </p>
-                            )}
-                            {isLinux && selectedRunner && (
-                              <p className="text-white">
-                                Runner: <span className="font-bold text-green-400">{runners.find(r => r.id === selectedRunner)?.name}</span>
-                              </p>
-                            )}
-                            <div className="mt-2 pt-2 border-t border-white/20">
-                              <p className="text-white text-sm">Customization:</p>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {enableVfx && <span className="text-xs bg-green-600/30 px-2 py-1 border border-green-400">Visual Effects</span>}
-                                {enableDiscordRPC && <span className="text-xs bg-green-600/30 px-2 py-1 border border-green-400">Discord RPC</span>}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <p className="text-white/80">Emerald Launcher is now configured and ready to use!</p>
-                      </div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              <div className="flex justify-between mt-4">
-                {currentStep > 0 && (
+              <div className="flex justify-between mt-5 gap-3">
+                {currentStep > 0 ? (
                   <button
                     onClick={handleBack}
                     onMouseEnter={() => {
-                      if (currentStep === 0) setFocusIndex(1);
+                      if (currentStep === 3) setFocusIndex(0);
+                      else if (currentStep === 2) setFocusIndex(2);
                       else if (currentStep === 1) setFocusIndex(isLinux ? runners.length : (isMac ? 1 : 0));
-                      else if (currentStep === 2) setFocusIndex(4);
-                      else if (currentStep === 3) setFocusIndex(0);
                     }}
-                    disabled={currentStep === 0}
-                    className={`mc-setup-nav-btn px-6 py-3 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_10px_rgba(250,204,21,0.3)] ${(currentStep === 1 && ((isLinux && focusIndex === runners.length) || (isMac && focusIndex === 1) || (!isLinux && !isMac && focusIndex === 0))) ||
-                      (currentStep === 2 && focusIndex === 4) ||
-                      (currentStep === 3 && focusIndex === 0)
-                      ? "border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]" : ""
-                      }`}
+                    className={`w-36 h-10 flex items-center justify-center transition-colors mc-text-shadow outline-none border-none
+                      ${(currentStep === 3 && focusIndex === 0) || (currentStep === 2 && focusIndex === 2) ||
+                        (currentStep === 1 && ((isLinux && focusIndex === runners.length) || (isMac && focusIndex === 1) || (!isLinux && !isMac && focusIndex === 0)))
+                        ? "text-[#FFFF55]" : "text-white"}`}
+                    style={navBtnStyle(
+                      (currentStep === 3 && focusIndex === 0) ||
+                      (currentStep === 2 && focusIndex === 2) ||
+                      (currentStep === 1 && ((isLinux && focusIndex === runners.length) || (isMac && focusIndex === 1) || (!isLinux && !isMac && focusIndex === 0)))
+                    )}
                   >
-                    Back
+                    <span className="tracking-widest uppercase text-xl">Back</span>
                   </button>
+                ) : (
+                  <div className="w-36" />
                 )}
 
                 <button
@@ -541,18 +544,27 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
                   onMouseEnter={() => {
                     if (currentStep === 0) setFocusIndex(1);
                     else if (currentStep === 1) setFocusIndex(isLinux ? runners.length + 1 : (isMac ? 2 : 1));
-                    else if (currentStep === 2) setFocusIndex(5);
+                    else if (currentStep === 2) setFocusIndex(3);
                     else if (currentStep === 3) setFocusIndex(1);
                   }}
                   disabled={!canProceed()}
-                  className={`${currentStep > 0 ? '' : 'ml-auto'} mc-setup-nav-btn px-6 py-3 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:border-yellow-400 hover:shadow-[0_0_10px_rgba(250,204,21,0.3)] ${(currentStep === 0 && focusIndex === 1) ||
+                  className={`w-36 h-10 flex items-center justify-center transition-colors mc-text-shadow outline-none border-none
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    ${(currentStep === 0 && focusIndex === 1) ||
+                      (currentStep === 1 && ((isLinux && focusIndex === runners.length + 1) || (isMac && focusIndex === 2) || (!isLinux && !isMac && focusIndex === 1))) ||
+                      (currentStep === 2 && focusIndex === 3) ||
+                      (currentStep === 3 && focusIndex === 1)
+                      ? "text-[#FFFF55]" : "text-white"}`}
+                  style={navBtnStyle(
+                    (currentStep === 0 && focusIndex === 1) ||
                     (currentStep === 1 && ((isLinux && focusIndex === runners.length + 1) || (isMac && focusIndex === 2) || (!isLinux && !isMac && focusIndex === 1))) ||
-                    (currentStep === 2 && focusIndex === 5) ||
+                    (currentStep === 2 && focusIndex === 3) ||
                     (currentStep === 3 && focusIndex === 1)
-                    ? "border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]" : ""
-                    }`}
+                  )}
                 >
-                  {currentStep === totalSteps - 1 ? "Finish" : "Next"}
+                  <span className="tracking-widest uppercase text-xl">
+                    {currentStep === totalSteps - 1 ? "Finish" : "Next"}
+                  </span>
                 </button>
               </div>
             </div>
