@@ -909,6 +909,23 @@ struct WorkshopInstallRequest {
     instance_id: String,
     zips: std::collections::HashMap<String, String>,
     package_id: String,
+    version: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+struct InstalledWorkshopPackage {
+    id: String,
+    version: String,
+    dirs: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+struct InstalledPackageEntry {
+    instance_id: String,
+    package_id: String,
+    version: String,
 }
 
 #[tauri::command]
@@ -919,19 +936,31 @@ async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Re
         return Err("Instance not installed".into());
     }
 
-    let media_dir   = instance_dir.join("Windows64Media");
-    let dlc_dir     = media_dir.join("DLC");
-    let game_hdd    = instance_dir.join("Windows64").join("GameHDD");
-    let mob_dir     = instance_dir.join("Common").join("res").join("mob");
-    let wf_path = instance_dir.join("workshop_files.json");
+    let media_dir = instance_dir.join("Windows64Media");
+    let dlc_dir   = media_dir.join("DLC");
+    let game_hdd  = instance_dir.join("Windows64").join("GameHDD");
+    let mob_dir   = instance_dir.join("Common").join("res").join("mob");
+    let wf_path   = instance_dir.join("workshop_files.json");
+    let wp_path   = instance_dir.join("workshop_packages.json");
+
     let mut workshop_files: Vec<String> = fs::read_to_string(&wf_path)
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
         .unwrap_or_default();
 
+    let mut workshop_packages: Vec<InstalledWorkshopPackage> = fs::read_to_string(&wp_path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+
+    workshop_packages.retain(|p| p.id != request.package_id);
+
     let raw_base = format!("https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/{}", request.package_id);
-    let tmp_dir = root.join(format!("workshop_tmp_{}", request.package_id));
+    let tmp_dir  = root.join(format!("workshop_tmp_{}", request.package_id));
     fs::create_dir_all(&tmp_dir).map_err(|e| e.to_string())?;
+
+    let mut pkg_dirs: Vec<String> = Vec::new();
+
     for (zip_name, placeholder) in &request.zips {
         let zip_url = format!("{}/{}", raw_base, zip_name);
         let zip_tmp = tmp_dir.join(zip_name);
@@ -942,6 +971,7 @@ async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Re
         }
         let bytes = response.bytes().await.map_err(|e| e.to_string())?;
         fs::write(&zip_tmp, &bytes).map_err(|e| e.to_string())?;
+
         let dest_dir = if placeholder.is_empty() {
             instance_dir.clone()
         } else {
@@ -954,6 +984,7 @@ async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Re
         };
 
         fs::create_dir_all(&dest_dir).map_err(|e| e.to_string())?;
+
         #[cfg(target_os = "linux")]
         {
             let status = Command::new("unzip")
@@ -979,16 +1010,101 @@ async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Re
 
         let dest_str = dest_dir.to_string_lossy().to_string();
         if !workshop_files.contains(&dest_str) {
-            workshop_files.push(dest_str);
+            workshop_files.push(dest_str.clone());
+        }
+        if !pkg_dirs.contains(&dest_str) {
+            pkg_dirs.push(dest_str);
         }
     }
 
     let _ = fs::remove_dir_all(&tmp_dir);
+
+    if let Ok(json) = serde_json::to_string(&workshop_files) {
+        let _ = fs::write(&wf_path, json);
+    }
+
+    workshop_packages.push(InstalledWorkshopPackage {
+        id: request.package_id.clone(),
+        version: request.version.clone(),
+        dirs: pkg_dirs,
+    });
+    if let Ok(json) = serde_json::to_string(&workshop_packages) {
+        let _ = fs::write(&wp_path, json);
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn workshop_uninstall(app: AppHandle, instance_id: String, package_id: String) -> Result<(), String> {
+    let root = get_app_dir(&app);
+    let instance_dir = root.join("instances").join(&instance_id);
+    let wp_path = instance_dir.join("workshop_packages.json");
+    let wf_path = instance_dir.join("workshop_files.json");
+
+    let mut packages: Vec<InstalledWorkshopPackage> = fs::read_to_string(&wp_path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+
+    if let Some(pkg) = packages.iter().find(|p| p.id == package_id) {
+        for dir in &pkg.dirs {
+            let path = PathBuf::from(dir);
+            if path.is_dir() {
+                let _ = fs::remove_dir_all(&path);
+            } else if path.is_file() {
+                let _ = fs::remove_file(&path);
+            }
+        }
+    }
+
+    let removed_dirs: std::collections::HashSet<String> = packages
+        .iter()
+        .find(|p| p.id == package_id)
+        .map(|p| p.dirs.iter().cloned().collect())
+        .unwrap_or_default();
+
+    packages.retain(|p| p.id != package_id);
+
+    if let Ok(json) = serde_json::to_string(&packages) {
+        let _ = fs::write(&wp_path, json);
+    }
+
+    let mut workshop_files: Vec<String> = fs::read_to_string(&wf_path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+    workshop_files.retain(|f| !removed_dirs.contains(f));
     if let Ok(json) = serde_json::to_string(&workshop_files) {
         let _ = fs::write(&wf_path, json);
     }
 
     Ok(())
+}
+
+#[tauri::command]
+fn workshop_list_installed(app: AppHandle) -> Vec<InstalledPackageEntry> {
+    let root = get_app_dir(&app);
+    let instances_dir = root.join("instances");
+    let mut result = Vec::new();
+    let Ok(entries) = fs::read_dir(&instances_dir) else { return result; };
+    for entry in entries.flatten() {
+        if !entry.path().is_dir() { continue; }
+        let instance_id = entry.file_name().to_string_lossy().to_string();
+        let wp_path = entry.path().join("workshop_packages.json");
+        let packages: Vec<InstalledWorkshopPackage> = fs::read_to_string(&wp_path)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_default();
+        for pkg in packages {
+            result.push(InstalledPackageEntry {
+                instance_id: instance_id.clone(),
+                package_id: pkg.id,
+                version: pkg.version,
+            });
+        }
+    }
+    result
 }
 
 #[tauri::command]
@@ -1343,7 +1459,7 @@ pub fn run() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, sync_dlc, fetch_skin, workshop_install, get_screenshots, delete_screenshot, save_global_skin_pck])
+        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, sync_dlc, fetch_skin, workshop_install, workshop_uninstall, workshop_list_installed, get_screenshots, delete_screenshot, save_global_skin_pck])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

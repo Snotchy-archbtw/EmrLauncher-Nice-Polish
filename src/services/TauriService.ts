@@ -57,6 +57,12 @@ export interface MacOSSetupProgress {
   percent?: number;
 }
 
+export interface InstalledWorkshopPackage {
+  instanceId: string;
+  packageId: string;
+  version: string;
+}
+
 export class TauriService {
   static async saveConfig(config: AppConfig): Promise<void> {
     return invoke("save_config", { config });
@@ -128,10 +134,19 @@ export class TauriService {
     instanceId: string,
     packageId: string,
     zips: Record<string, string>,
+    version: string,
   ): Promise<void> {
     return invoke("workshop_install", {
-      request: { instanceId, packageId, zips },
+      request: { instanceId, packageId, zips, version },
     });
+  }
+
+  static async workshopUninstall(instanceId: string, packageId: string): Promise<void> {
+    return invoke("workshop_uninstall", { instanceId, packageId });
+  }
+
+  static async workshopListInstalled(): Promise<InstalledWorkshopPackage[]> {
+    return invoke("workshop_list_installed");
   }
 
   static onDownloadProgress(callback: (percent: number) => void) {

@@ -3,14 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useUI, useAudio, useConfig, GameContext } from '../../context/LauncherContext';
-import { TauriService } from '../../services/TauriService';
-
+import { TauriService, InstalledWorkshopPackage } from '../../services/TauriService';
 const REGISTRY_URL = 'https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/registry.json';
 const RAW_BASE = 'https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main';
 const CATEGORY_TABS = ['Skin', 'Texture', 'World', 'Mod', 'DLC'] as const;
-const ALL_TABS = [...CATEGORY_TABS, 'Search'] as const;
+const ALL_TABS = [...CATEGORY_TABS, 'Installed', 'Search'] as const;
 type TabType = typeof ALL_TABS[number];
-
 interface RegistryPackage {
   id: string;
   name: string;
@@ -24,7 +22,6 @@ interface RegistryPackage {
 }
 
 const COLS = 4;
-
 const WorkshopView = memo(function WorkshopView() {
   const { setActiveView } = useUI();
   const { playPressSound, playBackSound } = useAudio();
@@ -32,7 +29,6 @@ const WorkshopView = memo(function WorkshopView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-
   const [activeTab, setActiveTab] = useState<TabType>('Skin');
   const [allPackages, setAllPackages] = useState<RegistryPackage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +36,20 @@ const WorkshopView = memo(function WorkshopView() {
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [selectedPkg, setSelectedPkg] = useState<RegistryPackage | null>(null);
+  const [installedPkgs, setInstalledPkgs] = useState<InstalledWorkshopPackage[]>([]);
+  const refreshInstalled = useCallback(async () => {
+    try {
+      const data = await TauriService.workshopListInstalled();
+      setInstalledPkgs(data);
+    } catch {
+      setInstalledPkgs([]);
+    }
+  }, []);
 
   useEffect(() => {
     containerRef.current?.focus();
-  }, []);
+    refreshInstalled();
+  }, [refreshInstalled]);
 
   useEffect(() => {
     setLoading(true);
@@ -63,17 +69,38 @@ const WorkshopView = memo(function WorkshopView() {
       });
   }, []);
 
-  const filteredItems = allPackages.filter((pkg) => {
-    const matchesTab = activeTab === 'Search' ? true : pkg.category.includes(activeTab);
-    if (!matchesTab) return false;
-    if (!search.trim()) return activeTab === 'Search' ? false : true;
-    const q = search.toLowerCase();
-    return (
-      pkg.name.toLowerCase().includes(q) ||
-      pkg.author.toLowerCase().includes(q) ||
-      pkg.description.toLowerCase().includes(q)
-    );
-  });
+  const getInstalledEntries = useCallback((pkgId: string) => {
+    return installedPkgs.filter((p) => p.packageId === pkgId);
+  }, [installedPkgs]);
+
+  const isInstalled = useCallback((pkgId: string) => {
+    return installedPkgs.some((p) => p.packageId === pkgId);
+  }, [installedPkgs]);
+
+  const hasUpdate = useCallback((pkg: RegistryPackage) => {
+    const entries = installedPkgs.filter((p) => p.packageId === pkg.id);
+    return entries.length > 0 && entries.some((e) => e.version !== pkg.version);
+  }, [installedPkgs]);
+
+  const installedPackageList = allPackages.filter((pkg) => isInstalled(pkg.id));
+  const filteredItems = activeTab === 'Installed'
+    ? (search.trim()
+      ? installedPackageList.filter((pkg) => {
+        const q = search.toLowerCase();
+        return pkg.name.toLowerCase().includes(q) || pkg.author.toLowerCase().includes(q) || pkg.description.toLowerCase().includes(q);
+      })
+      : installedPackageList)
+    : allPackages.filter((pkg) => {
+      const matchesTab = activeTab === 'Search' ? true : pkg.category.includes(activeTab);
+      if (!matchesTab) return false;
+      if (!search.trim()) return activeTab === 'Search' ? false : true;
+      const q = search.toLowerCase();
+      return (
+        pkg.name.toLowerCase().includes(q) ||
+        pkg.author.toLowerCase().includes(q) ||
+        pkg.description.toLowerCase().includes(q)
+      );
+    });
 
   useEffect(() => {
     setFocusedIdx(null);
@@ -162,7 +189,8 @@ const WorkshopView = memo(function WorkshopView() {
   }, [playBackSound, playPressSound, setActiveView, cycleTab, filteredItems, focusedIdx, selectedPkg, openModal]);
 
   const isSearchTab = activeTab === 'Search';
-
+  const isInstalledTab = activeTab === 'Installed';
+  const showSearch = isSearchTab || isInstalledTab;
   return (
     <motion.div
       ref={containerRef}
@@ -180,12 +208,15 @@ const WorkshopView = memo(function WorkshopView() {
       <div className="flex items-center justify-center gap-2 mb-6 w-full flex-wrap px-4">
         {ALL_TABS.map((tab) => {
           const isActive = tab === activeTab;
+          const updateCount = tab === 'Installed'
+            ? allPackages.filter((p) => hasUpdate(p)).length
+            : 0;
           return (
             <button
               key={tab}
               onClick={() => selectTab(tab)}
               className={`
-                h-10 px-6 text-lg mc-text-shadow tracking-widest border-none outline-none cursor-pointer transition-all
+                relative h-10 px-6 text-lg mc-text-shadow tracking-widest border-none outline-none cursor-pointer transition-all
                 ${isActive ? 'text-[#FFFF55] scale-105' : 'text-white hover:text-[#FFFF55] hover:scale-105'}
               `}
               style={{
@@ -197,6 +228,11 @@ const WorkshopView = memo(function WorkshopView() {
               }}
             >
               {tab.toUpperCase()}
+              {updateCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-[#FF5555] text-white text-[8px] rounded-full w-4 h-4 flex items-center justify-center font-bold mc-text-shadow border border-[#AA0000]">
+                  {updateCount}
+                </span>
+              )}
             </button>
           );
         })}
@@ -204,14 +240,12 @@ const WorkshopView = memo(function WorkshopView() {
 
       <div
         className="w-[98%] flex-1 relative overflow-hidden"
-        style={{
-          minHeight: '500px',
-        }}
+        style={{ minHeight: '500px' }}
       >
         <AnimatePresence mode="wait">
-          {isSearchTab ? (
+          {showSearch ? (
             <motion.div
-              key="search-tab"
+              key={isInstalledTab ? 'installed-tab' : 'search-tab'}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -231,9 +265,9 @@ const WorkshopView = memo(function WorkshopView() {
                     type="text"
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setFocusedIdx(null); }}
-                    placeholder="ENTER KEYWORDS..."
+                    placeholder={isInstalledTab ? "FILTER INSTALLED..." : "ENTER KEYWORDS..."}
                     spellCheck={false}
-                    autoFocus
+                    autoFocus={isSearchTab}
                     className="bg-transparent border-none outline-none text-white text-lg mc-text-shadow w-full placeholder-white/40 font-['Mojangles'] tracking-widest"
                   />
                   {search && (
@@ -248,13 +282,19 @@ const WorkshopView = memo(function WorkshopView() {
               </div>
 
               <div ref={gridRef} className="flex-1 overflow-y-auto p-6 scroll-smooth">
-                {!search.trim() ? (
+                {isSearchTab && !search.trim() ? (
                   <div className="flex flex-col items-center justify-center h-[200px] opacity-40">
                     <span className="text-xl mc-text-shadow tracking-widest uppercase">Start typing to search...</span>
                   </div>
+                ) : loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <span className="text-3xl text-[#FFFF55] mc-text-shadow tracking-widest animate-pulse uppercase">Searching Archives...</span>
+                  </div>
                 ) : filteredItems.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
-                    <span className="text-2xl text-[#E0E0E0] mc-text-shadow uppercase tracking-widest opacity-60">No results</span>
+                    <span className="text-2xl text-[#E0E0E0] mc-text-shadow uppercase tracking-widest opacity-60">
+                      {isInstalledTab ? 'Nothing Installed' : 'No results'}
+                    </span>
                   </div>
                 ) : (
                   <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
@@ -266,6 +306,8 @@ const WorkshopView = memo(function WorkshopView() {
                         focused={focusedIdx === i}
                         onHover={() => setFocusedIdx(i)}
                         onClick={() => openModal(pkg)}
+                        installed={isInstalled(pkg.id)}
+                        hasUpdate={hasUpdate(pkg)}
                       />
                     ))}
                   </div>
@@ -305,6 +347,8 @@ const WorkshopView = memo(function WorkshopView() {
                       focused={focusedIdx === i}
                       onHover={() => setFocusedIdx(i)}
                       onClick={() => openModal(pkg)}
+                      installed={isInstalled(pkg.id)}
+                      hasUpdate={hasUpdate(pkg)}
                     />
                   ))}
                 </div>
@@ -328,23 +372,31 @@ const WorkshopView = memo(function WorkshopView() {
 
       <AnimatePresence>
         {selectedPkg && (
-          <PackageModal pkg={selectedPkg} onClose={closeModal} playPressSound={playPressSound} />
+          <PackageModal
+            pkg={selectedPkg}
+            onClose={closeModal}
+            playPressSound={playPressSound}
+            installedEntries={getInstalledEntries(selectedPkg.id)}
+            onInstallComplete={refreshInstalled}
+            onUninstallComplete={refreshInstalled}
+          />
         )}
       </AnimatePresence>
     </motion.div>
   );
 });
 
-function PackageCard({ pkg, index, focused, onHover, onClick }: {
+function PackageCard({ pkg, index, focused, onHover, onClick, installed, hasUpdate }: {
   pkg: RegistryPackage;
   index: number;
   focused: boolean;
   onHover: () => void;
   onClick: () => void;
+  installed: boolean;
+  hasUpdate: boolean;
 }) {
   const thumbnailUrl = `${RAW_BASE}/${pkg.id}/${pkg.thumbnail}`;
   const [imgError, setImgError] = useState(false);
-
   return (
     <div
       data-card={index}
@@ -370,6 +422,16 @@ function PackageCard({ pkg, index, focused, onHover, onClick }: {
             <span key={c} className="text-[8px] bg-black/80 border border-[#555] px-1.5 py-0.5 text-[#FFFF55] mc-text-shadow uppercase tracking-tighter">{c}</span>
           ))}
         </div>
+        {hasUpdate && (
+          <div className="absolute top-1 left-1">
+            <span className="text-[8px] bg-[#FF8800]/90 border border-[#FF6600] px-1.5 py-0.5 text-white mc-text-shadow uppercase tracking-tighter">Update</span>
+          </div>
+        )}
+        {installed && !hasUpdate && (
+          <div className="absolute top-1 left-1">
+            <span className="text-[8px] bg-[#55FF55] border border-[#55FF55]/60 px-1.5 py-0.5 text-[#55FF55] mc-text-shadow uppercase tracking-tighter">Installed</span>
+          </div>
+        )}
       </div>
       <div className="flex flex-col p-3 gap-1 relative bg-gradient-to-b from-transparent to-black/20">
         <span className={`text-base mc-text-shadow leading-tight truncate font-bold tracking-wide ${focused ? 'text-[#FFFF55]' : 'text-white'}`}>
@@ -387,34 +449,48 @@ function PackageCard({ pkg, index, focused, onHover, onClick }: {
   );
 }
 
-function PackageModal({ pkg, onClose, playPressSound }: {
+function PackageModal({ pkg, onClose, playPressSound, installedEntries, onInstallComplete, onUninstallComplete }: {
   pkg: RegistryPackage;
   onClose: () => void;
   playPressSound: () => void;
+  installedEntries: InstalledWorkshopPackage[];
+  onInstallComplete: () => void;
+  onUninstallComplete: () => void;
 }) {
   const thumbnailUrl = `${RAW_BASE}/${pkg.id}/${pkg.thumbnail}`;
   const [imgError, setImgError] = useState(false);
-  const [modalFocus, setModalFocus] = useState<'install' | 'close'>('install');
+  const [modalFocus, setModalFocus] = useState<'install' | 'uninstall' | 'close'>('install');
   const [showInstall, setShowInstall] = useState(false);
+  const [showUninstall, setShowUninstall] = useState(false);
+  const hasInstalled = installedEntries.length > 0;
+  const needsUpdate = hasInstalled && installedEntries.some((e) => e.version !== pkg.version);
+  const focusOptions: Array<'install' | 'uninstall' | 'close'> = hasInstalled
+    ? ['install', 'uninstall', 'close']
+    : ['install', 'close'];
 
   useEffect(() => {
-    if (showInstall) return; //neo: let install modal handle keys
+    if (showInstall || showUninstall) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Backspace') {
         onClose();
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
         e.preventDefault();
         playPressSound();
-        setModalFocus((p) => p === 'install' ? 'close' : 'install');
+        setModalFocus((p) => {
+          const idx = focusOptions.indexOf(p);
+          return focusOptions[(idx + 1) % focusOptions.length];
+        });
       } else if (e.key === 'Enter') {
         if (modalFocus === 'close') onClose();
         else if (modalFocus === 'install') setShowInstall(true);
+        else if (modalFocus === 'uninstall') setShowUninstall(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [modalFocus, showInstall, onClose, playPressSound]);
+  }, [modalFocus, showInstall, showUninstall, onClose, playPressSound, focusOptions]);
 
+  const installLabel = !hasInstalled ? 'INSTALL' : needsUpdate ? 'UPDATE' : 'REINSTALL';
   return (
     <>
       <motion.div
@@ -451,6 +527,16 @@ function PackageModal({ pkg, onClose, playPressSound }: {
               <span className="text-3xl text-white mc-text-shadow block leading-tight tracking-wide font-bold">{pkg.name}</span>
               <span className="text-base text-[#FFFF55] mc-text-shadow uppercase tracking-widest opacity-90">By {pkg.author}</span>
             </div>
+            {needsUpdate && (
+              <div className="absolute top-3 right-3 bg-[#FF8800] border border-[#FF6600] px-2 py-1">
+                <span className="text-[10px] text-white mc-text-shadow uppercase tracking-widest">Update Available</span>
+              </div>
+            )}
+            {hasInstalled && !needsUpdate && (
+              <div className="absolute top-3 right-3 bg-[#003300] border border-[#55FF55]/60 px-2 py-1">
+                <span className="text-[10px] text-[#55FF55] mc-text-shadow uppercase tracking-widest">Installed</span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col p-6 gap-6 overflow-y-auto flex-1">
@@ -482,6 +568,15 @@ function PackageModal({ pkg, onClose, playPressSound }: {
                     <span className="text-[#888] mc-text-shadow">Package ID:</span>
                     <span className="text-[#55FF55] mc-text-shadow truncate ml-2">{pkg.id}</span>
                   </div>
+                  {hasInstalled && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[#888] mc-text-shadow">Installed:</span>
+                      <span className={`mc-text-shadow truncate ml-2 ${needsUpdate ? 'text-[#FF8800]' : 'text-[#55FF55]'}`}>
+                        v{installedEntries[0]?.version}
+                        {needsUpdate ? ' (outdated)' : ''}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
@@ -519,8 +614,22 @@ function PackageModal({ pkg, onClose, playPressSound }: {
                   imageRendering: 'pixelated',
                 }}
               >
-                INSTALL
+                {installLabel}
               </button>
+              {hasInstalled && (
+                <button
+                  onMouseEnter={() => setModalFocus('uninstall')}
+                  onClick={() => setShowUninstall(true)}
+                  className={`w-36 h-12 flex items-center justify-center text-xl mc-text-shadow border-none outline-none cursor-pointer transition-all ${modalFocus === 'uninstall' ? 'text-[#FF5555] scale-105' : 'text-white'}`}
+                  style={{
+                    backgroundImage: modalFocus === 'uninstall' ? "url('/images/button_highlighted.png')" : "url('/images/Button_Background.png')",
+                    backgroundSize: '100% 100%',
+                    imageRendering: 'pixelated',
+                  }}
+                >
+                  REMOVE
+                </button>
+              )}
               <button
                 onMouseEnter={() => setModalFocus('close')}
                 onClick={onClose}
@@ -540,7 +649,21 @@ function PackageModal({ pkg, onClose, playPressSound }: {
 
       <AnimatePresence>
         {showInstall && (
-          <InstallModal pkg={pkg} onClose={() => setShowInstall(false)} playPressSound={playPressSound} />
+          <InstallModal
+            pkg={pkg}
+            onClose={() => { setShowInstall(false); onInstallComplete(); }}
+            playPressSound={playPressSound}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showUninstall && (
+          <UninstallModal
+            pkg={pkg}
+            installedEntries={installedEntries}
+            onClose={() => { setShowUninstall(false); onUninstallComplete(); }}
+            playPressSound={playPressSound}
+          />
         )}
       </AnimatePresence>
     </>
@@ -554,11 +677,9 @@ function InstallModal({ pkg, onClose, playPressSound }: {
 }) {
   const game = useContext(GameContext);
   const availableEditions = game?.editions.filter(e => game.installs.includes(e.id)) || [];
-
   const [focusedIdx, setFocusedIdx] = useState(0);
   const [status, setStatus] = useState<'idle' | 'installing' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       e.stopPropagation();
@@ -593,7 +714,7 @@ function InstallModal({ pkg, onClose, playPressSound }: {
     setErrorMsg(null);
     playPressSound();
     try {
-      await TauriService.workshopInstall(instanceId, pkg.id, pkg.zips);
+      await TauriService.workshopInstall(instanceId, pkg.id, pkg.zips, pkg.version);
       setStatus('success');
     } catch (e: any) {
       console.error(e);
@@ -673,6 +794,134 @@ function InstallModal({ pkg, onClose, playPressSound }: {
               ))
             )
           )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function UninstallModal({ pkg, installedEntries, onClose, playPressSound }: {
+  pkg: RegistryPackage;
+  installedEntries: InstalledWorkshopPackage[];
+  onClose: () => void;
+  playPressSound: () => void;
+}) {
+  const game = useContext(GameContext);
+  const [focusedIdx, setFocusedIdx] = useState(0);
+  const [status, setStatus] = useState<'idle' | 'removing' | 'success' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const editionName = (instanceId: string) => {
+    const ed = game?.editions.find(e => e.id === instanceId);
+    return ed?.name ?? instanceId;
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.stopPropagation();
+      if (status === 'removing') return;
+      if (status === 'success') {
+        if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'Enter') onClose();
+        return;
+      }
+
+      if (e.key === 'Escape' || e.key === 'Backspace') {
+        onClose();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        playPressSound();
+        setFocusedIdx((p) => Math.max(p - 1, 0));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        playPressSound();
+        setFocusedIdx((p) => Math.min(p + 1, installedEntries.length - 1));
+      } else if (e.key === 'Enter') {
+        if (installedEntries.length > 0) {
+          uninstallFrom(installedEntries[focusedIdx].instanceId);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [installedEntries, focusedIdx, status, onClose, playPressSound]);
+
+  const uninstallFrom = async (instanceId: string) => {
+    setStatus('removing');
+    setErrorMsg(null);
+    playPressSound();
+    try {
+      await TauriService.workshopUninstall(instanceId, pkg.id);
+      setStatus('success');
+    } catch (e: any) {
+      console.error(e);
+      setStatus('error');
+      setErrorMsg(typeof e === 'string' ? e : e.message);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80"
+      onClick={status !== 'removing' ? onClose : undefined}
+    >
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 20, opacity: 0 }}
+        transition={{ duration: 0.15 }}
+        onClick={(e) => e.stopPropagation()}
+        className="flex flex-col w-[520px] font-['Mojangles'] text-white border-2 border-[#555] rounded-sm overflow-hidden"
+        style={{
+          backgroundImage: "url('/images/frame_background.png')",
+          backgroundSize: '100% 100%',
+          imageRendering: 'pixelated',
+        }}
+      >
+        <div className="p-6 border-b border-[#555] bg-black/60">
+          <span className="text-2xl mc-text-shadow block font-bold tracking-wide text-[#FF5555]">REMOVE CONTENT</span>
+          <span className="text-sm text-[#A0A0A0] mc-text-shadow uppercase tracking-widest opacity-80 mt-1">Select edition to remove "{pkg.name}"</span>
+        </div>
+
+        <div className="p-4 flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+          {status === 'removing' && (
+            <div className="py-8 flex flex-col items-center justify-center gap-3">
+              <span className="text-2xl text-[#FF5555] mc-text-shadow animate-pulse">Removing...</span>
+              <span className="text-xs text-[#A0A0A0] mc-text-shadow">Deleting installed files</span>
+            </div>
+          )}
+          {status === 'success' && (
+            <div className="py-8 flex flex-col items-center justify-center gap-3">
+              <span className="text-2xl text-[#55FF55] mc-text-shadow">Removed Successfully!</span>
+              <span className="text-xs text-[#A0A0A0] mc-text-shadow">Press any key or click to continue</span>
+            </div>
+          )}
+          {status === 'error' && (
+            <div className="py-6 flex flex-col items-center justify-center gap-3">
+              <span className="text-xl text-[#FF5555] mc-text-shadow">Removal Failed</span>
+              <span className="text-xs text-[#A0A0A0] mc-text-shadow text-center">{errorMsg}</span>
+              <button
+                onClick={() => setStatus('idle')}
+                className="mt-2 w-32 h-9 flex items-center justify-center text-sm mc-text-shadow text-white cursor-pointer"
+                style={{ backgroundImage: "url('/images/Button_Background.png')", backgroundSize: '100% 100%', imageRendering: 'pixelated' }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {status === 'idle' && installedEntries.map((entry, i) => (
+            <div
+              key={entry.instanceId}
+              onClick={() => uninstallFrom(entry.instanceId)}
+              onMouseEnter={() => setFocusedIdx(i)}
+              className={`flex items-center justify-between p-3 cursor-pointer border-2 transition-none ${focusedIdx === i ? 'border-[#FF5555] bg-black/40' : 'border-[#444] bg-black/20'}`}
+            >
+              <span className={`text-lg mc-text-shadow ${focusedIdx === i ? 'text-[#FF5555]' : 'text-white'}`}>{editionName(entry.instanceId)}</span>
+              <span className="text-[10px] text-[#666] mc-text-shadow uppercase tracking-widest">v{entry.version}</span>
+            </div>
+          ))}
         </div>
       </motion.div>
     </motion.div>
