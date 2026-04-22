@@ -2,11 +2,10 @@
   <img height="150" src="https://raw.githubusercontent.com/LCE-Hub/LCE-Emerald-Launcher/refs/heads/main/public/images/icon.png" alt="LCE Emerald Launcher Logo">
   <h1>LCE Emerald Launcher</h1>
   <p><strong>FOSS cross-platform launcher for Minecraft Legacy Console Edition</strong></p>
-  
   <p>
     <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/license-GPL--3.0-green?style=flat-square" alt="License">
-    <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platforms">
+    <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20GNU%20Linux-lightgrey?style=flat-square" alt="Platforms">
   </p>
 </div>
 
@@ -27,11 +26,14 @@
 
 ---
 
+<!--neo: TODO: add screenshots from Github WebUI -->
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
-- [Screenshots](#screenshots)
 - [Installation](#installation)
   - [Windows](#windows)
   - [macOS](#macos)
@@ -39,7 +41,6 @@
 - [Game Versions & Partnerships](#game-versions--partnerships)
 - [Building from Source](#building-from-source)
 - [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
 - [Acknowledgments](#acknowledgments)
 - [License](#license)
 
@@ -47,17 +48,13 @@
 
 ## Overview
 
-Emerald Legacy Launcher is a **high-performance, open-source launcher** for Minecraft Legacy Console Edition (LCE). Built to centralize the fragmented LCE scene, it provides a lightweight, unified hub for playing your favorite console versions of Minecraft on PC.
+Emerald Legacy Launcher is a **high-performance, open-source launcher** for Minecraft Legacy Console Edition (LCE). Built to centralize the LCE scene, it provides a lightweight, unified hub for playing your favorite console versions of Minecraft on PC.
 
-**Why Emerald?** Traditional launchers often rely on bloated frameworks, consuming excessive resources. Emerald utilizes a modern **Rust/Tauri** architecture, using only **~15MB of RAM** — leaving your PC's resources dedicated to the game itself.
-
-The project started as a solo effort and has grown into a collaborative community project, bringing together expertise from various LCE preservation initiatives.
+**Why Emerald?** Traditional launchers often rely on bloated frameworks, consuming excessive resources. Emerald utilizes a modern **Tauri** architecture, using only **~15MB of RAM**, leaving your PC's resources dedicated to the game itself.
 
 ---
 
 ## Features
-
-### Core Features
 
 | Feature | Description |
 |---------|-------------|
@@ -65,14 +62,9 @@ The project started as a solo effort and has grown into a collaborative communit
 | **Cross-Platform** | Native support for Windows, macOS (Intel & Apple Silicon), and Linux |
 | **Lightweight** | Very light RAM usage thanks to Rust backend and Tauri framework |
 | **Easy Configuration** | Built-in settings for username, game parameters, and profiles |
-
-### Advanced Features
-
-| Feature | Description |
-|---------|-------------|
-| **3D Skin Viewer** | Interactive skin preview using Three.js with layer support |
+| **Skin Viewer** | Interactive skin preview using Three.js with layer support |
 | **Custom Skins** | Import and manage your own skins with local storage |
-| **Controller Support** | Full gamepad navigation support (keyboard fallback included) |
+| **Controller Support** | Full gamepad navigation support (keyboard support included) |
 | **Discord Rich Presence** | Show your current activity and game status on Discord |
 | **Workshop** | Community content |
 
@@ -80,21 +72,15 @@ The project started as a solo effort and has grown into a collaborative communit
 
 ## Game Versions & Partnerships
 
-Emerald Legacy Launcher integrates multiple community-driven builds of Minecraft Legacy Console Edition. Each build brings unique features and improvements to the classic LCE experience.
+Emerald Launcher integrates multiple community-driven builds of Minecraft Legacy Console Edition. Each build brings unique features and improvements to the classic LCE experience.
 
 ### Available Builds
 
 | Build | Developer | Platform | Description |
 |-------|-----------|----------|-------------|
+| **[neoLegacy](https://github.com/pieeebot/neoLegacy)** | [@pieeebot](https://github.com/pieeebot) | GitHub | Backports newer title updates to LCE TU19 base. And Minigames. |
 | **[Revelations](https://github.com/itsRevela/MinecraftConsoles)** | [@itsRevela](https://github.com/itsRevela) | GitHub | Enhanced LCE with uncapped FPS, graphics fixes, hardcore hearts, and dedicated server security. Features LAN multiplayer, split-screen, and keyboard & mouse support. |
 | **[360 Revived](https://github.com/BluTac10/360Revived)** | [@BluTac10](https://github.com/BluTac10) | GitHub | PC port of Xbox 360 Edition TU19 with desktop optimizations. Features keyboard & mouse, fullscreen, LAN multiplayer, dedicated server, and split-screen support. |
-| **[neoLegacy](https://github.com/pieeebot/neoLegacy)** | [@pieeebot](https://github.com/pieeebot) | GitHub | Backports newer title updates to LCE TU19 base. And Minigames. |
-
----
-
-## Screenshots
-
-<img width="1680" alt="Emerald Legacy Launcher Screenshot" src="https://github.com/user-attachments/assets/a5dd6aa1-2200-4f08-84e5-e75a8052ba79" />
 
 ---
 
@@ -107,7 +93,7 @@ Download the latest release from [GitHub Releases](https://github.com/LCE-Hub/LC
 | Format | Best For |
 |--------|----------|
 | `.exe` (NSIS) | Standard installation with uninstaller |
-| `.msi` | Enterprise/IT deployment |
+| `.msi` | A fallback option in case the `.exe` does not work |
 
 **⚠️ Windows SmartScreen Warning:**
 > Since the launcher is unsigned, Windows may show a "Windows protected your PC" warning. To proceed:
@@ -119,7 +105,7 @@ Download the latest release from [GitHub Releases](https://github.com/LCE-Hub/LC
 | Format | Architecture |
 |--------|-------------|
 | `.dmg` (x64) | Intel Macs |
-| `.dmg` (aarch64) | Apple Silicon (M1/M2/M3) |
+| `.dmg` (aarch64) | Apple Silicon (M-series and A-series) |
 
 **Installation Steps:**
 1. Download the appropriate DMG for your Mac
@@ -128,7 +114,7 @@ Download the latest release from [GitHub Releases](https://github.com/LCE-Hub/LC
    - Right-click the app → **Open** → confirm **Open**
    - Or run: `xattr -cr "/Applications/Emerald Legacy Launcher.app"`
 
-### Linux
+### GNU/Linux
 
 Multiple distribution formats available:
 
@@ -137,7 +123,7 @@ Multiple distribution formats available:
 | `.deb` | Debian, Ubuntu, Linux Mint |
 | `.rpm` | RHEL, Fedora, openSUSE |
 | `.AppImage` | Universal (no installation required) |
-| `Flatpak` | Universal with sandboxing |
+| `.flatpak` | Universal with sandboxing (recommended over AppImage) |
 
 **Flatpak Installation:**
 ```bash
@@ -157,37 +143,7 @@ sudo dnf install webkit2gtk4.1-devel libappindicator-gtk3-devel librsvg2-devel p
 
 ## Building from Source
 
-### Requirements
-
-- **Node.js** (LTS recommended)
-- **Rust** (latest stable)
-- **PNPM** (recommended) or NPM
-- Platform-specific dependencies:
-  - Linux: `WebKit2GTK-4.1`
-  - macOS: WebKit (pre-installed)
-  - Windows: Edge WebView2 Runtime (usually pre-installed)
-
-### Build Steps
-
-```bash
-# Clone the repository
-git clone https://github.com/LCE-Hub/LCE-Emerald-Launcher.git
-cd Emerald-Legacy-Launcher
-
-# Install dependencies
-pnpm install
-
-# Development mode
-pnpm tauri dev
-
-# Production build
-pnpm tauri build
-```
-
-**Flatpak Build:**
-```bash
-pnpm flatpak
-```
+Refer to [BUILDING.md](BUILDING.md).
 
 ---
 
@@ -225,20 +181,11 @@ sudo apt install --reinstall libwebkit2gtk-4.1-0
 
 ---
 
-## Roadmap
-
-Track our progress and upcoming features on the [Development Roadmap](https://github.com/orgs/Emerald-Legacy-Launcher/projects/2).
-
----
-
 ## Acknowledgments
 
-*Proudly developed by a passionate team from the LCE community.*
-
-- **The Emerald Team** — Technical development and maintenance
-- **4J Studios & Mojang** — Original creators of Legacy Console Edition
-- **The LCE Community** — Research and foundations for LCE on PC
-- **Tauri & Rust Communities** — Core technologies and ecosystem
+- **The Emerald Team** - Technical development and maintenance
+- **4J Studios & Mojang** - Original creators of Legacy Console Edition
+- **The LCE Community** - Research and foundations for LCE on PC
 
 ---
 
