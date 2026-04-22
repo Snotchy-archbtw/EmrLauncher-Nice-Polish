@@ -51,9 +51,9 @@
 
 ## Overview
 
-Emerald Legacy Launcher is a **high-performance, open-source launcher** for Minecraft Legacy Console Edition (LCE). Built to centralize the LCE scene, it provides a lightweight, unified hub for playing your favorite console versions of Minecraft on PC.
+LCE Emerald Launcher is the easiest way to play Minecraft Legacy Console Edition on PC. Install community builds, manage versions, customize skins, and launch instantly from one lightweight hub.
 
-**Why Emerald?** Traditional launchers often rely on bloated frameworks, consuming excessive resources. Emerald utilizes a modern **Tauri** architecture, using only **~15MB of RAM**, leaving your PC's resources dedicated to the game itself.
+**Why Emerald?** Traditional launchers often rely on bloated frameworks, consuming excessive resources. Emerald utilizes a modern **Tauri** architecture, using only a low amount of RAM, leaving your PC's resources dedicated to the game itself.
 
 ---
 
@@ -75,7 +75,7 @@ Emerald Legacy Launcher is a **high-performance, open-source launcher** for Mine
 
 ## Game Versions & Partnerships
 
-Emerald Launcher integrates multiple community-driven builds of Minecraft Legacy Console Edition. Each build brings unique features and improvements to the classic LCE experience.
+LCE Emerald Launcher integrates multiple community-driven builds of Minecraft Legacy Console Edition. Each build brings unique features and improvements to the classic LCE experience.
 
 ### Available Builds
 
@@ -89,9 +89,9 @@ Emerald Launcher integrates multiple community-driven builds of Minecraft Legacy
 
 ## Installation
 
-### Windows
+[![](https://raw.githubusercontent.com/rubenpgrady/get-it-on-github/refs/heads/main/get-it-on-github.png)](https://github.com/LCE-Hub/LCE-Emerald-Launcher/releases)
 
-Download the latest release from [GitHub Releases](https://github.com/LCE-Hub/LCE-Emerald-Launcher/releases):
+### Windows
 
 | Format | Best For |
 |--------|----------|
