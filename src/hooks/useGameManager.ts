@@ -88,7 +88,7 @@ export function useGameManager({
       } else {
         setGameUpdateMessage(null);
       }
-    } catch(e) {
+    } catch (e) {
       console.error(e);
     }
   }, [profile, editions]);
