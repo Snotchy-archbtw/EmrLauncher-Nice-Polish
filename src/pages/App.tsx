@@ -369,7 +369,7 @@ export default function App() {
                     )}
                   </AnimatePresence>
 
-                  <div className="w-full max-w-4xl relative flex justify-center items-center">
+                  <div className="w-full h-full max-w-4xl relative flex justify-center items-center overflow-hidden">
                     <AnimatePresence mode="wait">
                       {activeView === "main" && <HomeView key="main-view" />}
                       {activeView === "settings" && (
