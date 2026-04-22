@@ -131,18 +131,51 @@ fn find_executable_recursive(root: &PathBuf, file_name: &str) -> Option<PathBuf>
     let entries = fs::read_dir(root).ok()?;
     for entry in entries.flatten() {
         let path = entry.path();
+        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+            if name == file_name {
+                return Some(path);
+            }
+        }
+
         if path.is_dir() {
             if let Some(found) = find_executable_recursive(&path, file_name) {
                 return Some(found);
             }
-            continue;
-        }
-
-        if path.file_name().and_then(|n| n.to_str()) == Some(file_name) {
-            return Some(path);
         }
     }
     None
+}
+
+fn is_macos_runtime_installed(app: &AppHandle) -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        let runtime_dir = get_macos_runtime_dir(app);
+        let toolkit_dir = runtime_dir.join("toolkit");
+        if !toolkit_dir.exists() {
+            return false;
+        }
+
+        let candidates = [
+            "Game Porting Toolkit.app",
+        ];
+
+        return candidates.iter().any(|name| find_executable_recursive(&toolkit_dir, name).is_some());
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        false
+    }
+}
+
+#[tauri::command]
+fn check_macos_runtime_installed(app: AppHandle) -> bool {
+    is_macos_runtime_installed(&app)
+}
+
+#[tauri::command]
+fn check_macos_runtime_installed_fast(app: AppHandle) -> bool {
+    is_macos_runtime_installed(&app)
 }
 
 #[cfg(unix)]
@@ -1499,7 +1532,7 @@ pub fn run() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, sync_dlc, fetch_skin, workshop_install, workshop_uninstall, workshop_list_installed, get_screenshots, delete_screenshot, open_screenshot_folder, save_global_skin_pck, check_game_update])
+        .invoke_handler(tauri::generate_handler![setup_macos_runtime, launch_game, stop_game, check_game_installed, save_config, load_config, download_and_install, open_instance_folder, cancel_download, get_available_runners, get_external_palettes, import_theme, download_runner, delete_instance, sync_dlc, fetch_skin, workshop_install, workshop_uninstall, workshop_list_installed, get_screenshots, delete_screenshot, open_screenshot_folder, save_global_skin_pck, check_game_update, check_macos_runtime_installed, check_macos_runtime_installed_fast])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

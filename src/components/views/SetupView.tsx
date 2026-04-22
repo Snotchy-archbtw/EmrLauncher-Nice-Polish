@@ -59,24 +59,16 @@ const SetupView: React.FC<SetupViewProps> = ({ onComplete }) => {
 
   const checkMacOSRuntime = async () => {
     try {
-      const localStorageInstalled = localStorage.getItem('lce-macos-runtime-installed') === 'true';
-      if (localStorageInstalled) {
-        try {
-          const runtimeCheck = await TauriService.checkMacOSRuntimeInstalledFast();
-          if (runtimeCheck) {
-            setRuntimeAlreadyInstalled(true);
-          } else {
-            localStorage.removeItem('lce-macos-runtime-installed');
-            setRuntimeAlreadyInstalled(false);
-          }
-        } catch {
-          setRuntimeAlreadyInstalled(true);
-        }
+      const runtimeCheck = await TauriService.checkMacOSRuntimeInstalledFast();
+      setRuntimeAlreadyInstalled(runtimeCheck);
+      if (runtimeCheck) {
+        localStorage.setItem('lce-macos-runtime-installed', 'true');
       } else {
-        setRuntimeAlreadyInstalled(false);
+        localStorage.removeItem('lce-macos-runtime-installed');
       }
     } catch {
       setRuntimeAlreadyInstalled(false);
+      localStorage.removeItem('lce-macos-runtime-installed');
     }
   };
 
