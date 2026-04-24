@@ -117,6 +117,19 @@ fn get_macos_runtime_dir(app: &AppHandle) -> PathBuf {
         .join("runtime")
 }
 
+fn get_instance_working_dir(app: &AppHandle, instance_id: &str) -> PathBuf {
+    let root = get_app_dir(app);
+    let config = load_config(app.clone());
+    if let Some(ref editions) = config.custom_editions {
+        if let Some(edition) = editions.iter().find(|e| e.id == instance_id) {
+            if let Some(ref path) = edition.path {
+                return PathBuf::from(path);
+            }
+        }
+    }
+    root.join("instances").join(instance_id)
+}
+
 #[cfg(target_os = "macos")]
 fn emit_macos_setup_progress(window: &tauri::Window, stage: &str, message: String, percent: Option<f64>) {
     let _ = window.emit(
@@ -472,38 +485,15 @@ async fn download_runner(app: AppHandle, state: State<'_, DownloadState>, name: 
 #[tauri::command]
 #[allow(non_snake_case)]
 fn check_game_installed(app: AppHandle, instance_id: String) -> bool {
-    let config = load_config(app.clone());
-    if let Some(ref editions) = config.custom_editions {
-        if let Some(edition) = editions.iter().find(|e| e.id == instance_id) {
-            if let Some(ref path) = edition.path {
-                return PathBuf::from(path).join("Minecraft.Client.exe").exists();
-            }
-        }
-    }
-    get_app_dir(&app).join("instances").join(&instance_id).join("Minecraft.Client.exe").exists()
+    get_instance_working_dir(&app, &instance_id).join("Minecraft.Client.exe").exists()
 }
 
 #[tauri::command]
 #[allow(non_snake_case)]
 fn open_instance_folder(app: AppHandle, instance_id: String) {
-    let config = load_config(app.clone());
-    let dir = if let Some(ref editions) = config.custom_editions {
-        if let Some(edition) = editions.iter().find(|e| e.id == instance_id) {
-            if let Some(ref path) = edition.path {
-                Some(PathBuf::from(path))
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-
-    let dir = dir.unwrap_or_else(|| get_app_dir(&app).join("instances").join(&instance_id));
-    if dir.exists() {
-        let _ = app.opener().open_path(dir.to_str().unwrap(), None::<&str>);
+    let folder = get_instance_working_dir(&app, &instance_id);
+    if folder.exists() {
+        let _ = app.opener().open_path(folder.to_str().unwrap(), None::<&str>);
     }
 }
 
@@ -514,7 +504,6 @@ fn delete_instance(app: AppHandle, instance_id: String) -> Result<(), String> {
     if let Some(ref editions) = config.custom_editions {
         if let Some(edition) = editions.iter().find(|e| e.id == instance_id) {
             if edition.path.is_some() {
-                // Do not delete files for custom path instances
                 return Ok(());
             }
         }
@@ -985,11 +974,29 @@ fn perform_dlc_sync(app: &AppHandle, instance_dir: &PathBuf) -> Result<(), Strin
     }
 }
 
+async fn perform_instance_sync(app: &AppHandle, instance_id: &str) -> Result<(), String> {
+    let target_dir = get_instance_working_dir(app, instance_id);
+    if !target_dir.exists() {
+        return Err("Instance directory not found".into());
+    }
+
+    let config = load_config(app.clone());
+    let _ = fs::write(target_dir.join("username.txt"), &config.username);
+
+    let skin_pck_path = get_app_dir(app).join("Skin.pck");
+    if skin_pck_path.exists() {
+        let skin_dlc_dir = target_dir.join("Windows64Media").join("DLC").join("Custom Skins");
+        let _ = fs::create_dir_all(&skin_dlc_dir);
+        let _ = fs::copy(&skin_pck_path, skin_dlc_dir.join("Skin.pck"));
+    }
+
+    perform_dlc_sync(app, &target_dir)?;
+    Ok(())
+}
+
 #[tauri::command]
 async fn sync_dlc(app: AppHandle, instance_id: String) -> Result<(), String> {
-    let root = get_app_dir(&app);
-    let instance_dir = root.join("instances").join(&instance_id);
-    perform_dlc_sync(&app, &instance_dir)
+    perform_instance_sync(&app, &instance_id).await
 }
 
 #[derive(Deserialize)]
@@ -1019,11 +1026,11 @@ struct InstalledPackageEntry {
 
 #[tauri::command]
 async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Result<(), String> {
-    let root = get_app_dir(&app);
-    let instance_dir = root.join("instances").join(&request.instance_id);
+    let instance_dir = get_instance_working_dir(&app, &request.instance_id);
     if !instance_dir.exists() {
         return Err("Instance not installed".into());
     }
+    let root = get_app_dir(&app);
 
     let media_dir = instance_dir.join("Windows64Media");
     let dlc_dir   = media_dir.join("DLC");
@@ -1043,13 +1050,10 @@ async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Re
         .unwrap_or_default();
 
     workshop_packages.retain(|p| p.id != request.package_id);
-
     let raw_base = format!("https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/{}", request.package_id);
     let tmp_dir  = root.join(format!("workshop_tmp_{}", request.package_id));
     fs::create_dir_all(&tmp_dir).map_err(|e| e.to_string())?;
-
     let mut pkg_dirs: Vec<String> = Vec::new();
-
     for (zip_name, placeholder) in &request.zips {
         let zip_url = format!("{}/{}", raw_base, zip_name);
         let zip_tmp = tmp_dir.join(zip_name);
@@ -1126,8 +1130,7 @@ async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Re
 
 #[tauri::command]
 async fn workshop_uninstall(app: AppHandle, instance_id: String, package_id: String) -> Result<(), String> {
-    let root = get_app_dir(&app);
-    let instance_dir = root.join("instances").join(&instance_id);
+    let instance_dir = get_instance_working_dir(&app, &instance_id);
     let wp_path = instance_dir.join("workshop_packages.json");
     let wf_path = instance_dir.join("workshop_files.json");
 
@@ -1174,23 +1177,57 @@ async fn workshop_uninstall(app: AppHandle, instance_id: String, package_id: Str
 #[tauri::command]
 fn workshop_list_installed(app: AppHandle) -> Vec<InstalledPackageEntry> {
     let root = get_app_dir(&app);
-    let instances_dir = root.join("instances");
     let mut result = Vec::new();
-    let Ok(entries) = fs::read_dir(&instances_dir) else { return result; };
-    for entry in entries.flatten() {
-        if !entry.path().is_dir() { continue; }
-        let instance_id = entry.file_name().to_string_lossy().to_string();
-        let wp_path = entry.path().join("workshop_packages.json");
-        let packages: Vec<InstalledWorkshopPackage> = fs::read_to_string(&wp_path)
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_default();
-        for pkg in packages {
-            result.push(InstalledPackageEntry {
-                instance_id: instance_id.clone(),
-                package_id: pkg.id,
-                version: pkg.version,
-            });
+    let mut instance_dirs = vec![root.join("instances")];
+    
+    let config = load_config(app.clone());
+    if let Some(editions) = config.custom_editions {
+        for ed in editions {
+            if let Some(path) = ed.path {
+                instance_dirs.push(PathBuf::from(path));
+            }
+        }
+    }
+
+    for base_dir in instance_dirs {
+        if base_dir.ends_with("instances") {
+            if let Ok(entries) = fs::read_dir(&base_dir) {
+                for entry in entries.flatten() {
+                    if !entry.path().is_dir() { continue; }
+                    let instance_id = entry.file_name().to_string_lossy().to_string();
+                    let wp_path = entry.path().join("workshop_packages.json");
+                    let packages: Vec<InstalledWorkshopPackage> = fs::read_to_string(&wp_path)
+                        .ok()
+                        .and_then(|s| serde_json::from_str(&s).ok())
+                        .unwrap_or_default();
+                    for pkg in packages {
+                        result.push(InstalledPackageEntry {
+                            instance_id: instance_id.clone(),
+                            package_id: pkg.id,
+                            version: pkg.version,
+                        });
+                    }
+                }
+            }
+        } else {
+            let instance_id = base_dir.file_name().and_then(|n| n.to_str()).unwrap_or("custom").to_string(); //neo: this is just fallback
+            let config = load_config(app.clone());
+            let final_id = config.custom_editions.as_ref()
+                .and_then(|eds| eds.iter().find(|e| e.path.as_deref() == base_dir.to_str()).map(|e| e.id.clone()))
+                .unwrap_or(instance_id);
+
+            let wp_path = base_dir.join("workshop_packages.json");
+            let packages: Vec<InstalledWorkshopPackage> = fs::read_to_string(&wp_path)
+                .ok()
+                .and_then(|s| serde_json::from_str(&s).ok())
+                .unwrap_or_default();
+            for pkg in packages {
+                result.push(InstalledPackageEntry {
+                    instance_id: final_id.clone(),
+                    package_id: pkg.id,
+                    version: pkg.version,
+                });
+            }
         }
     }
     result
@@ -1198,7 +1235,7 @@ fn workshop_list_installed(app: AppHandle) -> Vec<InstalledPackageEntry> {
 
 #[tauri::command]
 async fn check_game_update(app: AppHandle, instance_id: String, url: String) -> Result<bool, String> {
-    let instance_dir = get_app_dir(&app).join("instances").join(&instance_id);
+    let instance_dir = get_instance_working_dir(&app, &instance_id);
     let timestamp_file = instance_dir.join("update_timestamp.txt");
     
     let local_timestamp = fs::read_to_string(&timestamp_file).unwrap_or_default();
@@ -1221,31 +1258,10 @@ async fn check_game_update(app: AppHandle, instance_id: String, url: String) -> 
 #[tauri::command]
 #[allow(non_snake_case)]
 async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: String, servers: Vec<McServer>) -> Result<(), String> {
-    let root = get_app_dir(&app);
-    let instance_dir = root.join("instances").join(&instance_id);
+    perform_instance_sync(&app, &instance_id).await?;
+    let working_dir = get_instance_working_dir(&app, &instance_id);
     let config = load_config(app.clone());
-    let username = config.username;
-    let _ = fs::write(instance_dir.join("username.txt"), &username);
-    ensure_server_list(&instance_dir, servers);
-    let skin_pck_path = root.join("Skin.pck");
-    if skin_pck_path.exists() {
-        let skin_dlc_dir = instance_dir.join("Windows64Media").join("DLC").join("Custom Skins");
-        let _ = fs::create_dir_all(&skin_dlc_dir);
-        let _ = fs::copy(&skin_pck_path, skin_dlc_dir.join("Skin.pck"));
-    }
-
-    let _ = perform_dlc_sync(&app, &instance_dir)?;
-    
-    let mut custom_path = None;
-    if let Some(ref editions) = config.custom_editions {
-        if let Some(edition) = editions.iter().find(|e| e.id == instance_id) {
-            if let Some(ref path) = edition.path {
-                custom_path = Some(PathBuf::from(path));
-            }
-        }
-    }
-
-    let working_dir = custom_path.unwrap_or_else(|| instance_dir.clone());
+    ensure_server_list(&working_dir, servers);
     let game_exe = working_dir.join("Minecraft.Client.exe");
     if !game_exe.exists() {
         return Err("Game executable not found in instance folder.".into());
@@ -1259,7 +1275,7 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
                 let mut cmd = if runner.r#type == "proton" {
                     let proton_exe = PathBuf::from(&runner.path).join("proton");
                     let mut c = tokio::process::Command::new(proton_exe);
-                    let compat_data = instance_dir.join("proton_prefix");
+                    let compat_data = working_dir.join("proton_prefix");
                     fs::create_dir_all(&compat_data).map_err(|e| e.to_string())?;
                     if std::env::var("STEAM_COMPAT_CLIENT_INSTALL_PATH").is_err() {
                         c.env("STEAM_COMPAT_CLIENT_INSTALL_PATH", "");
@@ -1533,29 +1549,68 @@ async fn download_logo(app: AppHandle, id: String, url: String) -> Result<String
 #[tauri::command]
 fn get_screenshots(app: AppHandle) -> Vec<ScreenshotInfo> {
     let mut screenshots = Vec::new();
-    let instances_dir = get_app_dir(&app).join("instances");
-    let _ = fs::create_dir_all(&instances_dir);
-    if let Ok(entries) = fs::read_dir(instances_dir) {
-        for entry in entries.flatten() {
-            if entry.path().is_dir() {
-                let instance_id = entry.file_name().to_string_lossy().to_string();
-                let screenshots_dir = entry.path().join("screenshots");
-                if let Ok(files) = fs::read_dir(screenshots_dir) {
-                    for file in files.flatten() {
-                        let path = file.path();
-                        if path.extension().and_then(|s| s.to_str()) == Some("png") {
-                            let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
-                            let date = path.metadata().and_then(|m| m.modified()).ok()
-                                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+    let root = get_app_dir(&app);
+    let mut instance_dirs = vec![root.join("instances")];
+
+    let config = load_config(app.clone());
+    if let Some(ref editions) = config.custom_editions {
+        for ed in editions {
+            if let Some(path) = &ed.path {
+                instance_dirs.push(PathBuf::from(path));
+            }
+        }
+    }
+
+    for base_dir in instance_dirs {
+        if base_dir.ends_with("instances") {
+            if let Ok(entries) = fs::read_dir(&base_dir) {
+                for entry in entries.flatten() {
+                    if entry.path().is_dir() {
+                        let instance_id = entry.file_name().to_string_lossy().to_string();
+                        let screenshots_dir = entry.path().join("screenshots");
+                        if let Ok(files) = fs::read_dir(screenshots_dir) {
+                            for file in files.flatten() {
+                                let path = file.path();
+                                if path.extension().and_then(|s| s.to_str()) == Some("png") {
+                                    let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                                    let date = path.metadata().and_then(|m| m.modified()).ok()
+                                        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                                        .map(|d| d.as_secs())
+                                        .unwrap_or(0);
+                                    screenshots.push(ScreenshotInfo {
+                                        path: path.to_string_lossy().to_string(),
+                                        instance_id: instance_id.clone(),
+                                        name,
+                                        date,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            let instance_id = base_dir.file_name().and_then(|n| n.to_str()).unwrap_or("custom").to_string();
+            let final_id = config.custom_editions.as_ref()
+                .and_then(|eds| eds.iter().find(|e| e.path.as_deref() == base_dir.to_str()).map(|e| e.id.clone()))
+                .unwrap_or(instance_id);
+
+            let screenshots_dir = base_dir.join("screenshots");
+            if let Ok(files) = fs::read_dir(screenshots_dir) {
+                for file in files.flatten() {
+                    let path = file.path();
+                    if path.extension().and_then(|s| s.to_str()) == Some("png") {
+                        let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                        let date = path.metadata().and_then(|m| m.modified()).ok()
+                            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
                                 .map(|d| d.as_secs())
                                 .unwrap_or(0);
-                            screenshots.push(ScreenshotInfo {
-                                path: path.to_string_lossy().to_string(),
-                                instance_id: instance_id.clone(),
-                                name,
-                                date,
-                            });
-                        }
+                        screenshots.push(ScreenshotInfo {
+                            path: path.to_string_lossy().to_string(),
+                            instance_id: final_id.clone(),
+                            name,
+                            date,
+                        });
                     }
                 }
             }
