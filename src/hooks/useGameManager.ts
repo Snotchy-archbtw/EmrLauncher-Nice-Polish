@@ -29,11 +29,11 @@ const BASE_EDITIONS = [
     logo: "/images/360_revived.png"
   },
   {
-    id: "legacy_nether_fork",
-    name: "Legacy Nether Fork",
+    id: "legacy_nether_fork", //kay: not changing this one also
+    name: "Hellish Ends",
     desc: "QoL, Random additions, and Nether/End dimensions overhaul (Modded build !)",
     url: "https://github.com/deadvoxelx/LegacyNetherFork/releases/download/nightly/LCEWindows64.zip",
-    titleImage: "/images/minecraft_title_legacynetherfork.png",
+    titleImage: "/images/minecraft_title_hellishends.png",
     supportsSlimSkins: false,
     logo: "/images/netherrack_0.png"
   }
