@@ -1374,7 +1374,7 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
             #[cfg(unix)]
             cmd.process_group(0);
 
-            cmd.current_dir(&instance_dir);
+            cmd.current_dir(&working_dir);
             cmd.env("WINEPREFIX", &prefix_dir);
             cmd.env("WINEDEBUG", "-all");
             let perf_boost = config.apple_silicon_performance_boost.unwrap_or(false);
@@ -1439,7 +1439,7 @@ async fn launch_game(app: AppHandle, state: State<'_, GameState>, instance_id: S
             let mut cmd = tokio::process::Command::new(&game_exe);
             #[cfg(unix)]
             cmd.process_group(0);
-            cmd.current_dir(&instance_dir);
+            cmd.current_dir(&working_dir);
             let child = cmd.spawn().map_err(|e| e.to_string())?;
             {
                 let mut lock = state.child.lock().await;
