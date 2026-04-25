@@ -84,8 +84,10 @@ LCE Emerald Launcher integrates multiple community-driven builds of Minecraft Le
 
 ## Installation
 
-[![](https://raw.githubusercontent.com/rubenpgrady/get-it-on-github/refs/heads/main/get-it-on-github.png)](https://github.com/LCE-Hub/LCE-Emerald-Launcher/releases)
-
+<a href="https://github.com/LCE-Hub/LCE-Emerald-Launcher/releases">
+  <img src="https://raw.githubusercontent.com/rubenpgrady/get-it-on-github/refs/heads/main/get-it-on-github.png" style="width: 160px">
+</a>
+  
 ### Windows
 
 | Format | Best For |
