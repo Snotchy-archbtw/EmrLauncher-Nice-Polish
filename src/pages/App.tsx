@@ -159,7 +159,7 @@ export default function App() {
           message={updateMessage}
           onClose={clearUpdateMessage}
           onClick={() =>
-            TauriService.openUrl("https://lce-hub.github.io/")
+            TauriService.openUrl("https://github.com/LCE-Hub/LCE-Emerald-Launcher/releases/latest")
           }
           title="Update Available!"
           variant="update"
@@ -279,7 +279,7 @@ export default function App() {
                           onClick={() => {
                             audio.playPressSound();
                             setIsUiHidden(false);
-                            setActiveView("swf-viewer");
+                            setActiveView("swf");
                           }}
                           className="pointer-events-auto hover:scale-110 active:scale-95 transition-transform outline-none bg-transparent border-none flex flex-col items-center gap-2 group"
                         >
@@ -292,7 +292,7 @@ export default function App() {
                             }}
                           />
                           <span className="text-[#FFFF55] text-sm mc-text-shadow opacity-0 group-hover:opacity-100 transition-opacity">
-                            SWF Viewer
+                            SWF Editor
                           </span>
                         </button>
                       </motion.div>
@@ -403,8 +403,8 @@ export default function App() {
                       {activeView === "options-editor" && (
                         <OptionsEditorView key="options-editor-view" />
                       )}
-                      {activeView === "swf-viewer" && (
-                        <SwfView key="swf-viewer-view" />
+                      {activeView === "swf-editor" && (
+                        <SwfView key="swf-editor-view" />
                       )}
                       {activeView === "skins" && <SkinsView key="skins-view" />}
                       {activeView === "screenshots" && (
