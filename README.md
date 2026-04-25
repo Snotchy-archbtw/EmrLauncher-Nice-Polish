@@ -20,12 +20,6 @@
 
 ---
 
-> [!IMPORTANT]
-> **macOS support for LCE Emerald Launcher is currently in Beta.**
-> Expect minor bugs, frequent updates, and features that are still being polished as we work toward a stable release.
-
----
-
 | Main Screen | Versions Menu | Workshop |
 |-------------|---------------|----------|
 | <img width="1388" height="918" alt="image" src="https://github.com/user-attachments/assets/28269ade-db3b-4bff-ac15-e8a6eb53a69e" /> | <img width="1551" height="997" alt="image" src="https://github.com/user-attachments/assets/dca543ab-94cf-48ce-8e61-dfe92fe278a7" /> | <img width="1551" height="997" alt="image" src="https://github.com/user-attachments/assets/d7bc0ed2-3bf4-4704-83c3-75c716d13a65" /> |
