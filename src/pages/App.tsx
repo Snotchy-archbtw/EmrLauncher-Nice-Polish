@@ -279,7 +279,7 @@ export default function App() {
                           onClick={() => {
                             audio.playPressSound();
                             setIsUiHidden(false);
-                            setActiveView("swf");
+                            setActiveView("swf-editor");
                           }}
                           className="pointer-events-auto hover:scale-110 active:scale-95 transition-transform outline-none bg-transparent border-none flex flex-col items-center gap-2 group"
                         >
