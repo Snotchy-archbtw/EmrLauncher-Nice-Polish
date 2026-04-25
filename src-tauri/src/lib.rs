@@ -1567,22 +1567,27 @@ fn get_screenshots(app: AppHandle) -> Vec<ScreenshotInfo> {
                 for entry in entries.flatten() {
                     if entry.path().is_dir() {
                         let instance_id = entry.file_name().to_string_lossy().to_string();
-                        let screenshots_dir = entry.path().join("screenshots");
-                        if let Ok(files) = fs::read_dir(screenshots_dir) {
-                            for file in files.flatten() {
-                                let path = file.path();
-                                if path.extension().and_then(|s| s.to_str()) == Some("png") {
-                                    let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
-                                    let date = path.metadata().and_then(|m| m.modified()).ok()
-                                        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-                                        .map(|d| d.as_secs())
-                                        .unwrap_or(0);
-                                    screenshots.push(ScreenshotInfo {
-                                        path: path.to_string_lossy().to_string(),
-                                        instance_id: instance_id.clone(),
-                                        name,
-                                        date,
-                                    });
+                        let dirs_to_check = [
+                            entry.path().join("screenshots"),
+                            entry.path().join("Windows64").join("GameHDD"),
+                        ];
+                        for screenshots_dir in dirs_to_check {
+                            if let Ok(files) = fs::read_dir(screenshots_dir) {
+                                for file in files.flatten() {
+                                    let path = file.path();
+                                    if path.extension().and_then(|s| s.to_str()) == Some("png") {
+                                        let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                                        let date = path.metadata().and_then(|m| m.modified()).ok()
+                                            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                                            .map(|d| d.as_secs())
+                                            .unwrap_or(0);
+                                        screenshots.push(ScreenshotInfo {
+                                            path: path.to_string_lossy().to_string(),
+                                            instance_id: instance_id.clone(),
+                                            name,
+                                            date,
+                                        });
+                                    }
                                 }
                             }
                         }
@@ -1595,22 +1600,27 @@ fn get_screenshots(app: AppHandle) -> Vec<ScreenshotInfo> {
                 .and_then(|eds| eds.iter().find(|e| e.path.as_deref() == base_dir.to_str()).map(|e| e.id.clone()))
                 .unwrap_or(instance_id);
 
-            let screenshots_dir = base_dir.join("screenshots");
-            if let Ok(files) = fs::read_dir(screenshots_dir) {
-                for file in files.flatten() {
-                    let path = file.path();
-                    if path.extension().and_then(|s| s.to_str()) == Some("png") {
-                        let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
-                        let date = path.metadata().and_then(|m| m.modified()).ok()
-                            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-                                .map(|d| d.as_secs())
-                                .unwrap_or(0);
-                        screenshots.push(ScreenshotInfo {
-                            path: path.to_string_lossy().to_string(),
-                            instance_id: final_id.clone(),
-                            name,
-                            date,
-                        });
+            let dirs_to_check = [
+                base_dir.join("screenshots"),
+                base_dir.join("Windows64").join("GameHDD"),
+            ];
+            for screenshots_dir in dirs_to_check {
+                if let Ok(files) = fs::read_dir(screenshots_dir) {
+                    for file in files.flatten() {
+                        let path = file.path();
+                        if path.extension().and_then(|s| s.to_str()) == Some("png") {
+                            let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                            let date = path.metadata().and_then(|m| m.modified()).ok()
+                                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                                    .map(|d| d.as_secs())
+                                    .unwrap_or(0);
+                            screenshots.push(ScreenshotInfo {
+                                path: path.to_string_lossy().to_string(),
+                                instance_id: final_id.clone(),
+                                name,
+                                date,
+                            });
+                        }
                     }
                 }
             }
