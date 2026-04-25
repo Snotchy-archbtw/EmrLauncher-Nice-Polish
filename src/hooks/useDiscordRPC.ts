@@ -59,6 +59,7 @@ export function useDiscordRPC({
           screenshots: "Browsing Screenshots",
           "col-editor": "Editing Color Files",
           "grf-editor": "Editing Game Rules",
+          "swf-editor": "Editing Game UI",
         };
         details = tabNames[activeView] || "In Menus";
       }
