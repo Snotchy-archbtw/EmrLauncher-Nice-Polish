@@ -659,14 +659,14 @@ async fn setup_macos_runtime(window: tauri::Window, app: AppHandle) -> Result<()
         drop(file);
 
         emit_macos_setup_progress(&window, "extracting", "Extracting runtime…".into(), None);
-        
+
         let archive_metadata = fs::metadata(&archive_path).map_err(|e| format!("Cannot read archive: {}", e))?;
         println!("Archive size: {} bytes", archive_metadata.len());
-        
+
         if archive_metadata.len() < 100_000_000 {
             return Err(format!("Archive too small: {} bytes", archive_metadata.len()));
         }
-        
+
         let status = Command::new("tar")
             .args([
                 "-xf",
@@ -679,9 +679,9 @@ async fn setup_macos_runtime(window: tauri::Window, app: AppHandle) -> Result<()
             .stderr(Stdio::piped())
             .status()
             .map_err(|e| e.to_string())?;
-        
+
         println!("Tar exit status: {:?}", status);
-        
+
         let _ = fs::remove_file(&archive_path);
         if !status.success() {
             return Err(format!("Extraction failed with status: {:?}", status));
@@ -891,9 +891,7 @@ async fn download_and_install(app: AppHandle, state: State<'_, DownloadState>, u
 
 fn ensure_server_list(instance_dir: &PathBuf, servers: Vec<McServer>) {
     let servers_db = instance_dir.join("servers.db");
-    
     let mut all_servers = Vec::new();
-    
     if let Ok(content) = fs::read(&servers_db) {
         if content.len() >= 12 && &content[0..4] == b"MCSV" {
             let count = u32::from_le_bytes(content[8..12].try_into().unwrap_or([0; 4]));
@@ -914,7 +912,7 @@ fn ensure_server_list(instance_dir: &PathBuf, servers: Vec<McServer>) {
                 if pos + name_len > content.len() { break; }
                 let name = String::from_utf8_lossy(&content[pos..pos+name_len]).to_string();
                 pos += name_len;
-                
+
                 all_servers.push(McServer { name, ip, port });
             }
         }
@@ -953,7 +951,7 @@ fn ensure_server_list(instance_dir: &PathBuf, servers: Vec<McServer>) {
 fn perform_dlc_sync(app: &AppHandle, instance_dir: &PathBuf) -> Result<(), String> {
     let mut dlc_src = None;
     let root = get_app_dir(app);
-    
+
     use tauri::path::BaseDirectory;
     if let Ok(p) = app.path().resolve("resources/DLC", BaseDirectory::Resource) {
         if p.exists() {
@@ -964,7 +962,7 @@ fn perform_dlc_sync(app: &AppHandle, instance_dir: &PathBuf) -> Result<(), Strin
             }
         }
     }
-    
+
     if dlc_src.is_none() {
         let current = std::env::current_dir().unwrap_or_default();
         let p3 = current.join("src-tauri").join("resources").join("DLC");
@@ -977,17 +975,17 @@ fn perform_dlc_sync(app: &AppHandle, instance_dir: &PathBuf) -> Result<(), Strin
         let p5 = root.join("DLC");
         if p5.exists() { dlc_src = Some(p5); }
     }
-    
+
     match dlc_src {
         Some(src) => {
             let dlc_dest = instance_dir.join("Windows64Media").join("DLC");
             let _ = fs::create_dir_all(&dlc_dest);
-            
+
             if let Ok(entries) = fs::read_dir(&src) {
                 for entry in entries.flatten() {
                     let name = entry.file_name();
                     let dest_path = dlc_dest.join(&name);
-                    
+
                     if !dest_path.exists() {
                         if let Err(e) = if entry.path().is_dir() {
                             copy_dir_all(entry.path(), &dest_path)
@@ -1106,11 +1104,11 @@ async fn workshop_install(app: AppHandle, request: WorkshopInstallRequest) -> Re
         let dest_dir = if placeholder.is_empty() {
             instance_dir.clone()
         } else {
-            let resolved = placeholder
+            let resolved = instance_dir.clone().join(placeholder
                 .replace("{MediaDir}", media_dir.to_str().unwrap_or(""))
                 .replace("{DLCDir}",   dlc_dir.to_str().unwrap_or(""))
                 .replace("{GameHDD}",  game_hdd.to_str().unwrap_or(""))
-                .replace("{MobDir}",   mob_dir.to_str().unwrap_or(""));
+                .replace("{MobDir}",   mob_dir.to_str().unwrap_or("")));
             PathBuf::from(resolved)
         };
 
@@ -1217,7 +1215,7 @@ fn workshop_list_installed(app: AppHandle) -> Vec<InstalledPackageEntry> {
     let root = get_app_dir(&app);
     let mut result = Vec::new();
     let mut instance_dirs = vec![root.join("instances")];
-    
+
     let config = load_config(app.clone());
     if let Some(editions) = config.custom_editions {
         for ed in editions {
@@ -1275,7 +1273,7 @@ fn workshop_list_installed(app: AppHandle) -> Vec<InstalledPackageEntry> {
 async fn check_game_update(app: AppHandle, instance_id: String, url: String) -> Result<bool, String> {
     let instance_dir = get_instance_working_dir(&app, &instance_id);
     let timestamp_file = instance_dir.join("update_timestamp.txt");
-    
+
     let local_timestamp = fs::read_to_string(&timestamp_file).unwrap_or_default();
     if local_timestamp.is_empty() {
         return Ok(false);
@@ -1289,7 +1287,7 @@ async fn check_game_update(app: AppHandle, instance_id: String, url: String) -> 
             }
         }
     }
-    
+
     Ok(false)
 }
 
@@ -1543,7 +1541,7 @@ async fn fetch_skin(username: String) -> Result<(String, String), String> {
     let mojang_data: serde_json::Value = serde_json::from_str(&mojang_text).map_err(|e| format!("Invalid Mojang JSON: {}", e))?;
     let id = mojang_data.get("id").and_then(|v| v.as_str()).ok_or_else(|| "Invalid Moajng response format".to_string())?;
     let name_exact = mojang_data.get("name").and_then(|v| v.as_str()).unwrap_or(&username).to_string();
-    
+
     let mc_api_url = format!("https://api.minecraftapi.net/v3/profile/{}", id);
     let mc_api_res = client.get(&mc_api_url).send().await.map_err(|e| format!("Failed request to mc api: {}", e))?;
     if !mc_api_res.status().is_success() {
@@ -1555,7 +1553,7 @@ async fn fetch_skin(username: String) -> Result<(String, String), String> {
         .and_then(|s| s.get("image"))
         .and_then(|v| v.as_str())
         .ok_or_else(|| "No skin found".to_string())?;
-        
+
     Ok((image_b64.to_string(), name_exact))
 }
 
@@ -1707,7 +1705,7 @@ pub fn run() {
                 path_str = path_str[1..].to_string();
             }
             let path = std::path::Path::new(&path_str);
-            
+
             match std::fs::read(path) {
                 Ok(data) => {
                     tauri::http::Response::builder()
