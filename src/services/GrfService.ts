@@ -302,4 +302,21 @@ export class GrfService {
 
     return finalBuffer.buffer;
   }
+
+  public static createDefaultGRF(): GrfFile {
+    return {
+      header: {
+        compressionLevel: GrfCompressionLevel.CompressedRle,
+        crc: 0,
+        compressionType: GrfCompressionType.Zlib,
+        unknownData: new Uint8Array([0, 0, 0, 0])
+      },
+      files: [],
+      root: {
+        name: "__ROOT__",
+        parameters: [],
+        children: []
+      }
+    };
+  }
 }
