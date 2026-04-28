@@ -70,14 +70,23 @@ export default function GrfEditorView() {
 
   const handleUpdateParameter = (nodePath: string[], paramIndex: number, value: string) => {
     if (!grf) return;
-    const newGrf = { ...grf };
-    let current = newGrf.root;
-    for (const part of nodePath) {
-      const found = current.children.find(c => c.name === part);
-      if (found) current = found;
-    }
-    current.parameters[paramIndex].value = value;
-    setGrf(newGrf);
+    const updateNode = (node: GrfNode, path: string[]): GrfNode => {
+      if (path.length === 0) {
+        if (!node.parameters[paramIndex]) return node;
+        const newParams = [...node.parameters];
+        newParams[paramIndex] = { ...newParams[paramIndex], value };
+        return { ...node, parameters: newParams };
+      }
+      const [next, ...rest] = path;
+      return {
+        ...node,
+        children: node.children.map(child => child.name === next ? updateNode(child, rest) : child)
+      };
+    };
+    setGrf({
+      ...grf,
+      root: updateNode(grf.root, nodePath)
+    });
   };
 
   const handleSaveGrf = () => {
@@ -282,7 +291,7 @@ function GrfNodeView({ node, level, path, onUpdate }: { node: GrfNode, level: nu
                   <input
                     type="text"
                     value={p.value}
-                    onChange={(e) => onUpdate(path, i, e.target.value)}
+                    onChange={(e) => onUpdate(currentPath, i, e.target.value)}
                     className="flex-1 bg-white/5 border border-white/10 px-2 py-1 text-white outline-none focus:border-[#FFFF55]/50 font-mono transition-colors"
                   />
                 </div>
