@@ -61,6 +61,7 @@ const VersionsView = memo(function VersionsView() {
     updateCustomEdition: onUpdateEdition,
     downloadingId,
     downloadProgress,
+    updatesAvailable,
   } = useGame();
   const [focusIndex, setFocusIndex] = useState<number>(0);
   const [focusBtn, setFocusBtn] = useState<number>(0);
@@ -488,7 +489,10 @@ const VersionsView = memo(function VersionsView() {
                                 src="/images/Update_Icon.png"
                                 alt="Update"
                                 className="w-6 h-6 object-contain"
-                                style={{ imageRendering: "pixelated" }}
+                                style={{
+                                  imageRendering: "pixelated",
+                                  filter: updatesAvailable?.[edition.id] ? "brightness(1.5) sepia(1) saturate(5) hue-rotate(15deg) drop-shadow(0 0 4px rgba(255,255,0,0.8))" : "none"
+                                }}
                               />
                             </button>
                             <button

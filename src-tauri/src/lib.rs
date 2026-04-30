@@ -1282,7 +1282,7 @@ async fn check_game_update(app: AppHandle, instance_id: String, url: String) -> 
 
     let local_timestamp = fs::read_to_string(&timestamp_file).unwrap_or_default();
     if local_timestamp.is_empty() {
-        return Ok(false);
+        return Ok(true);
     }
 
     let response = reqwest::Client::new().head(&url).send().await.map_err(|e| e.to_string())?;

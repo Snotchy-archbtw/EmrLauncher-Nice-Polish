@@ -170,7 +170,7 @@ export default function App() {
           onClose={() => game.setGameUpdateMessage(null)}
           onClick={() => {
             game.setGameUpdateMessage(null);
-            game.toggleInstall(config.profile);
+            setActiveView("versions");
           }}
           title="Game Update Available!"
           variant="update"

@@ -43,7 +43,7 @@ const PARTNERSHIP_SERVERS = [
   {
     name: "Kowhaifans Clubhouse",
     ip: "lce.kowhaifan.net",
-    port: 1026,
+    port: 25565,
   },
 ];
 
@@ -86,26 +86,42 @@ export function useGameManager({
     setInstalls(results.filter((id): id is string => id !== null));
   }, [editions]);
 
+  const [updatesAvailable, setUpdatesAvailable] = useState<Record<string, boolean>>({});
+
   const checkForGameUpdates = useCallback(async () => {
-    if (!profile) return;
-    const edition = editions.find(e => e.id === profile);
-    if (!edition) return;
-    try {
-      const isUpdate = await TauriService.checkGameUpdate(profile, edition.url);
-      if (isUpdate) {
-        setGameUpdateMessage(`An update is available for ${edition.name}!`);
-      } else {
-        setGameUpdateMessage(null);
-      }
-    } catch (e) {
-      console.error(e);
+    const checks = await Promise.all(
+      editions.map(async (edition) => {
+        if (!installs.includes(edition.id)) return [edition.id, false] as const;
+        try {
+          const isUpdate = await TauriService.checkGameUpdate(edition.id, edition.url);
+          return [edition.id, isUpdate] as const;
+        } catch (e) {
+          console.error(e);
+          return [edition.id, false] as const;
+        }
+      })
+    );
+
+    const newUpdates: Record<string, boolean> = {};
+    for (const [id, hasUpdate] of checks) {
+      newUpdates[id as string] = hasUpdate as boolean;
     }
-  }, [profile, editions]);
+    setUpdatesAvailable(newUpdates);
+
+    const updatedGames = editions.filter(e => newUpdates[e.id]);
+    if (updatedGames.length > 0) {
+      if (updatedGames.length === 1) {
+        setGameUpdateMessage(`An update is available for ${updatedGames[0].name}!`);
+      } else {
+        setGameUpdateMessage(`Updates are available for ${updatedGames.length} versions!`);
+      }
+    } else {
+      setGameUpdateMessage(null);
+    }
+  }, [editions, installs]);
 
   useEffect(() => {
-    if (installs.includes(profile)) {
-      checkForGameUpdates();
-    }
+    checkForGameUpdates();
   }, [profile, installs, checkForGameUpdates]);
 
   useEffect(() => {
@@ -270,5 +286,6 @@ export function useGameManager({
     checkInstalls,
     gameUpdateMessage,
     setGameUpdateMessage,
+    updatesAvailable,
   };
 }
