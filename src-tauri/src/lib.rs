@@ -1827,7 +1827,7 @@ pub fn run() {
         .register_uri_scheme_protocol("screenshots", |_app, request| {
             let uri = request.uri().path();
             let decoded_path = percent_encoding::percent_decode_str(uri).decode_utf8_lossy();
-            let path_str = decoded_path.to_string();
+            let mut path_str = decoded_path.to_string();
             #[cfg(target_os = "windows")]
             if path_str.starts_with('/') {
                 path_str = path_str[1..].to_string();
