@@ -6,7 +6,7 @@ interface AchievementToastProps {
   onClose: () => void;
   onClick?: () => void;
   title?: string;
-  variant?: "error" | "update";
+  variant?: "error" | "update" | "steam";
 }
 
 export function AchievementToast({
@@ -43,6 +43,11 @@ export function AchievementToast({
         </svg>
       );
     }
+    if (variant === "steam") {
+      return (
+        <img src="/images/steam.png" alt="Steam" className="w-8 h-8 object-contain" style={{ imageRendering: "pixelated", filter: "brightness(0) invert(1)" }} />
+      );
+    }
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -72,9 +77,9 @@ export function AchievementToast({
           onClick={
             onClick
               ? () => {
-                  onClick();
-                  onClose();
-                }
+                onClick();
+                onClose();
+              }
               : undefined
           }
           className={`fixed top-6 right-6 z-[9999] ${onClick ? "cursor-pointer" : ""}`}

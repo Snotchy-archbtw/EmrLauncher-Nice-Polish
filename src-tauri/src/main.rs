@@ -11,6 +11,7 @@ fn main() {
         let stage = env::var("EMERALD_LAUNCH_STAGE").unwrap_or_else(|_| "0".to_string());
         if stage == "0" {
             let mut cmd = Command::new(env::current_exe().unwrap());
+            cmd.args(env::args().skip(1));
             cmd.env("EMERALD_LAUNCH_STAGE", "1");
             
             let wayland_libs = ["/usr/lib64/libwayland-client.so.0", "/usr/lib/libwayland-client.so.0"];
@@ -76,6 +77,7 @@ fn main() {
                     println!("Emerald: Automatic recovery triggered for graphics crash/invisible launch.");
                 }
                 let mut retry_cmd = Command::new(env::current_exe().unwrap());
+                retry_cmd.args(env::args().skip(1));
                 retry_cmd.env("EMERALD_LAUNCH_STAGE", "2")
                     .env("GDK_BACKEND", "x11")
                     .env("WEBKIT_DISABLE_DMABUF_RENDERER", "1")

@@ -73,7 +73,7 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     gameRaw.downloadingId, gameRaw.editions, gameRaw.isRunnerDownloading,
     gameRaw.runnerDownloadProgress, gameRaw.error, gameRaw.updateCustomEdition,
     gameRaw.handleUninstall, gameRaw.handleCancelDownload, gameRaw.gameUpdateMessage, configRaw.profile,
-    gameRaw.updatesAvailable
+    gameRaw.updatesAvailable, gameRaw.addToSteam, gameRaw.steamSuccessMessage
   ]);
 
   const audio = useMemo(() => audioRaw, [

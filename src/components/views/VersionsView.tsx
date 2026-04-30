@@ -26,9 +26,8 @@ const DeleteConfirmButton = memo(function DeleteConfirmButton({
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`w-24 h-10 flex items-center justify-center mc-text-shadow transition-colors ${
-        isDanger ? "text-red-500" : "text-white"
-      } ${isHovered ? (isDanger ? "text-red-400" : "text-[#FFFF55]") : ""}`}
+      className={`w-24 h-10 flex items-center justify-center mc-text-shadow transition-colors ${isDanger ? "text-red-500" : "text-white"
+        } ${isHovered ? (isDanger ? "text-red-400" : "text-[#FFFF55]") : ""}`}
       style={{
         backgroundImage: isHovered
           ? "url('/images/button_highlighted.png')"
@@ -62,7 +61,9 @@ const VersionsView = memo(function VersionsView() {
     downloadingId,
     downloadProgress,
     updatesAvailable,
+    addToSteam,
   } = useGame();
+  const { isDayTime } = useConfig();
   const [focusIndex, setFocusIndex] = useState<number>(0);
   const [focusBtn, setFocusBtn] = useState<number>(0);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -100,7 +101,7 @@ const VersionsView = memo(function VersionsView() {
           const edition = editions[focusIndex];
           const isInstalled = installedVersions.includes(edition.id);
           const isCustom = edition.id.startsWith("custom_");
-          const maxBtn = isInstalled ? (isCustom ? 4 : 3) : 1;
+          const maxBtn = isInstalled ? (isCustom ? 6 : 4) : 1;
           setFocusBtn((prev) => (prev <= 0 ? maxBtn : prev - 1));
         }
       } else if (e.key === "ArrowRight") {
@@ -109,7 +110,7 @@ const VersionsView = memo(function VersionsView() {
           const edition = editions[focusIndex];
           const isInstalled = installedVersions.includes(edition.id);
           const isCustom = edition.id.startsWith("custom_");
-          const maxBtn = isInstalled ? (isCustom ? 4 : 3) : 1;
+          const maxBtn = isInstalled ? (isCustom ? 6 : 4) : 1;
           setFocusBtn((prev) => (prev >= maxBtn ? 0 : prev + 1));
         }
       } else if (e.key === "Enter") {
@@ -142,10 +143,26 @@ const VersionsView = memo(function VersionsView() {
                 playPressSound();
                 setDeleteConfirmEdition(edition);
               }
-            } else if (focusBtn === 4 && isCustom) {
+            } else if (focusBtn === 4) {
+              playPressSound();
+              const PANORAMA_PROFILES = ["legacy_evolved", "360revived"];
+              const panoId = PANORAMA_PROFILES.includes(edition.id)
+                ? edition.id
+                : "legacy_evolved";
+              const panoramaUrl = `/panorama/${panoId}_Panorama_Background_${isDayTime ? "Day" : "Night"}.png`;
+              addToSteam(
+                edition.id,
+                edition.name,
+                edition.titleImage,
+                panoramaUrl,
+              );
+            } else if (focusBtn === 5 && isCustom) {
               playPressSound();
               setEditingEdition(edition);
               setIsImportModalOpen(true);
+            } else if (focusBtn === 6 && isCustom) {
+              playBackSound();
+              onDeleteEdition(edition.id);
             }
           } else {
             if (focusBtn === 1) {
@@ -185,6 +202,8 @@ const VersionsView = memo(function VersionsView() {
     setActiveView,
     toggleInstall,
     handleCancelDownload,
+    addToSteam,
+    isDayTime
   ]);
 
   useEffect(() => {
@@ -261,11 +280,9 @@ const VersionsView = memo(function VersionsView() {
                 <div
                   key={edition.id}
                   data-index={i}
-                  className={`w-[calc(100%-16px)] mx-2 flex items-center gap-3 p-2 rounded-sm ${
-                    isSelected && !isComingSoon ? "bg-[#404040]/50" : ""
-                  } ${isFocused && !isComingSoon ? "ring-2 ring-white" : ""} ${
-                    isComingSoon ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                  className={`w-[calc(100%-16px)] mx-2 flex items-center gap-3 p-2 rounded-sm ${isSelected && !isComingSoon ? "bg-[#404040]/50" : ""
+                    } ${isFocused && !isComingSoon ? "ring-2 ring-white" : ""} ${isComingSoon ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   onMouseEnter={() => !isComingSoon && setFocusIndex(i)}
                 >
                   <div className="w-6 flex items-center justify-center flex-shrink-0">
@@ -302,18 +319,17 @@ const VersionsView = memo(function VersionsView() {
                       !isComingSoon && handleEditionClick(edition, i)
                     }
                     disabled={isComingSoon}
-                    className={`flex-1 text-left min-w-0 outline-none rounded ${
-                      focusIndex === i && focusBtn === 0 && !isComingSoon
-                        ? "ring-2 ring-white"
-                        : ""
-                    } ${isComingSoon ? "cursor-not-allowed" : ""}`}
+                    className={`flex-1 text-left min-w-0 outline-none rounded ${focusIndex === i && focusBtn === 0 && !isComingSoon
+                      ? "ring-2 ring-white"
+                      : ""
+                      } ${isComingSoon ? "cursor-not-allowed" : ""}`}
                   >
                     <div className="flex items-center gap-2">
                       {edition.logo && (
                         <img
                           src={
                             edition.logo.startsWith("http") ||
-                            edition.logo.startsWith("/images")
+                              edition.logo.startsWith("/images")
                               ? edition.logo
                               : `screenshots://localhost/${edition.logo.replace(/\\/g, "/")}`
                           }
@@ -323,9 +339,8 @@ const VersionsView = memo(function VersionsView() {
                         />
                       )}
                       <span
-                        className={`text-xl tracking-wide truncate ${
-                          isSelected ? "text-white" : "text-black"
-                        }`}
+                        className={`text-xl tracking-wide truncate ${isSelected ? "text-white" : "text-black"
+                          }`}
                         style={{ textShadow: "none" }}
                       >
                         {edition.name}
@@ -346,9 +361,8 @@ const VersionsView = memo(function VersionsView() {
                       )}
                     </div>
                     <p
-                      className={`text-base font-medium leading-tight ${
-                        isSelected ? "text-[#DDDDDD]" : "text-[#666666]"
-                      }`}
+                      className={`text-base font-medium leading-tight ${isSelected ? "text-[#DDDDDD]" : "text-[#666666]"
+                        }`}
                     >
                       {edition.desc}
                     </p>
@@ -371,7 +385,7 @@ const VersionsView = memo(function VersionsView() {
                             backgroundImage:
                               (hoveredBtn?.row === i &&
                                 hoveredBtn?.btn === "cancel") ||
-                              (focusIndex === i && focusBtn === 1)
+                                (focusIndex === i && focusBtn === 1)
                                 ? "url('/images/Button_Square_Highlighted.png')"
                                 : "url('/images/Button_Square.png')",
                             backgroundSize: "100% 100%",
@@ -407,7 +421,7 @@ const VersionsView = memo(function VersionsView() {
                             backgroundImage:
                               (hoveredBtn?.row === i &&
                                 hoveredBtn?.btn === "download") ||
-                              (focusIndex === i && focusBtn === 1)
+                                (focusIndex === i && focusBtn === 1)
                                 ? "url('/images/Button_Square_Highlighted.png')"
                                 : "url('/images/Button_Square.png')",
                             backgroundSize: "100% 100%",
@@ -441,7 +455,7 @@ const VersionsView = memo(function VersionsView() {
                               backgroundImage:
                                 (hoveredBtn?.row === i &&
                                   hoveredBtn?.btn === "cancel") ||
-                                (focusIndex === i && focusBtn === 1)
+                                  (focusIndex === i && focusBtn === 1)
                                   ? "url('/images/Button_Square_Highlighted.png')"
                                   : "url('/images/Button_Square.png')",
                               backgroundSize: "100% 100%",
@@ -476,7 +490,7 @@ const VersionsView = memo(function VersionsView() {
                                 backgroundImage:
                                   (hoveredBtn?.row === i &&
                                     hoveredBtn?.btn === "update") ||
-                                  (focusIndex === i && focusBtn === 1)
+                                    (focusIndex === i && focusBtn === 1)
                                     ? "url('/images/Button_Square_Highlighted.png')"
                                     : "url('/images/Button_Square.png')",
                                 backgroundSize: "100% 100%",
@@ -510,7 +524,7 @@ const VersionsView = memo(function VersionsView() {
                                 backgroundImage:
                                   (hoveredBtn?.row === i &&
                                     hoveredBtn?.btn === "folder") ||
-                                  (focusIndex === i && focusBtn === 2)
+                                    (focusIndex === i && focusBtn === 2)
                                     ? "url('/images/Button_Square_Highlighted.png')"
                                     : "url('/images/Button_Square.png')",
                                 backgroundSize: "100% 100%",
@@ -539,7 +553,7 @@ const VersionsView = memo(function VersionsView() {
                                 backgroundImage:
                                   (hoveredBtn?.row === i &&
                                     hoveredBtn?.btn === "delete") ||
-                                  (focusIndex === i && focusBtn === 3)
+                                    (focusIndex === i && focusBtn === 3)
                                     ? "url('/images/Button_Square_Highlighted.png')"
                                     : "url('/images/Button_Square.png')",
                                 backgroundSize: "100% 100%",
@@ -552,6 +566,33 @@ const VersionsView = memo(function VersionsView() {
                                 className="w-6 h-6 object-contain"
                                 style={{ imageRendering: "pixelated" }}
                               />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playPressSound();
+                                const PANORAMA_PROFILES = ['legacy_evolved', '360revived'];
+                                const panoId = PANORAMA_PROFILES.includes(edition.id) ? edition.id : 'legacy_evolved';
+                                const panoramaUrl = `/panorama/${panoId}_Panorama_Background_${isDayTime ? 'Day' : 'Night'}.png`;
+                                addToSteam(edition.id, edition.name, edition.titleImage, panoramaUrl);
+                              }}
+                              onMouseEnter={() =>
+                                setHoveredBtn({ row: i, btn: "steam" })
+                              }
+                              onMouseLeave={() => setHoveredBtn(null)}
+                              className="w-8 h-8 flex items-center justify-center text-[#3a3a3a]"
+                              style={{
+                                backgroundImage:
+                                  (hoveredBtn?.row === i &&
+                                    hoveredBtn?.btn === "steam") ||
+                                    (focusIndex === i && focusBtn === 4)
+                                    ? "url('/images/Button_Square_Highlighted.png')"
+                                    : "url('/images/Button_Square.png')",
+                                backgroundSize: "100% 100%",
+                                imageRendering: "pixelated",
+                              }}
+                            >
+                              <img src="/images/steam.png" alt="Add To Steam" className="w-6 h-6 object-contain" style={{ imageRendering: "pixelated", filter: "brightness(0) invert(1)" }} />
                             </button>
                             {isCustom && (
                               <>
@@ -571,7 +612,7 @@ const VersionsView = memo(function VersionsView() {
                                     backgroundImage:
                                       (hoveredBtn?.row === i &&
                                         hoveredBtn?.btn === "edit") ||
-                                      (focusIndex === i && focusBtn === 4)
+                                        (focusIndex === i && focusBtn === 5)
                                         ? "url('/images/Button_Square_Highlighted.png')"
                                         : "url('/images/Button_Square.png')",
                                     backgroundSize: "100% 100%",
@@ -598,15 +639,15 @@ const VersionsView = memo(function VersionsView() {
                                     onDeleteEdition(edition.id);
                                   }}
                                   onMouseEnter={() =>
-                                    setHoveredBtn({ row: i, btn: "delete" })
+                                    setHoveredBtn({ row: i, btn: "delete_custom" })
                                   }
                                   onMouseLeave={() => setHoveredBtn(null)}
                                   className="w-8 h-8 flex items-center justify-center text-red-600"
                                   style={{
                                     backgroundImage:
                                       (hoveredBtn?.row === i &&
-                                        hoveredBtn?.btn === "delete") ||
-                                      (focusIndex === i && focusBtn === 3)
+                                        hoveredBtn?.btn === "delete_custom") ||
+                                        (focusIndex === i && focusBtn === 6)
                                         ? "url('/images/Button_Square_Highlighted.png')"
                                         : "url('/images/Button_Square.png')",
                                     backgroundSize: "100% 100%",
@@ -651,7 +692,7 @@ const VersionsView = memo(function VersionsView() {
                   backgroundImage:
                     (hoveredBtn?.row === editions.length &&
                       hoveredBtn?.btn === "add") ||
-                    focusIndex === editions.length
+                      focusIndex === editions.length
                       ? "url('/images/Button_Square_Highlighted.png')"
                       : "url('/images/Button_Square.png')",
                   backgroundSize: "100% 100%",
@@ -684,7 +725,7 @@ const VersionsView = memo(function VersionsView() {
                   backgroundImage:
                     (hoveredBtn?.row === editions.length &&
                       hoveredBtn?.btn === "folder_import") ||
-                    focusIndex === editions.length + 1
+                      focusIndex === editions.length + 1
                       ? "url('/images/Button_Square_Highlighted.png')"
                       : "url('/images/Button_Square.png')",
                   backgroundSize: "100% 100%",

@@ -70,6 +70,7 @@ export function useGameManager({
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [gameUpdateMessage, setGameUpdateMessage] = useState<string | null>(null);
+  const [steamSuccessMessage, setSteamSuccessMessage] = useState<string | null>(null);
 
   const editions = useMemo(
     () => [...BASE_EDITIONS, ...customEditions],
@@ -264,6 +265,19 @@ export function useGameManager({
     [customEditions, setCustomEditions],
   );
 
+  const addToSteam = useCallback(
+    async (id: string, name: string, titleImage: string, panoramaImage: string) => {
+      try {
+        await TauriService.addToSteam(id, name, titleImage, panoramaImage);
+        setSteamSuccessMessage(`Added ${name} to Steam! (Restart Steam to see it)`);
+      } catch (e: any) {
+        console.error(e);
+        setError(typeof e === "string" ? e : e.message || "Failed to add to Steam");
+      }
+    },
+    [setError, setSteamSuccessMessage]
+  );
+
   return {
     installs,
     isGameRunning,
@@ -286,6 +300,9 @@ export function useGameManager({
     checkInstalls,
     gameUpdateMessage,
     setGameUpdateMessage,
+    steamSuccessMessage,
+    setSteamSuccessMessage,
     updatesAvailable,
+    addToSteam,
   };
 }

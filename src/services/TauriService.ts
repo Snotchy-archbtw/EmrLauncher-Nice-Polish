@@ -226,4 +226,13 @@ export class TauriService {
   static async downloadLogo(id: string, url: string): Promise<string> {
     return invoke("download_logo", { id, url });
   }
+
+  static async addToSteam(
+    instanceId: string,
+    name: string,
+    titleImage: string,
+    panoramaImage: string
+  ): Promise<void> {
+    return invoke("add_to_steam", { instanceId, name, titleImage, panoramaImage });
+  }
 }

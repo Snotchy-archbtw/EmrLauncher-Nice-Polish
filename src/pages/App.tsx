@@ -177,6 +177,13 @@ export default function App() {
           variant="update"
         />
 
+        <AchievementToast
+          message={game.steamSuccessMessage}
+          onClose={() => game.setSteamSuccessMessage(null)}
+          title="Steam Integration"
+          variant="steam"
+        />
+
         <AnimatePresence>
           {showSetup ? (
             <SetupView
