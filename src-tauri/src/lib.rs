@@ -1695,7 +1695,7 @@ async fn add_to_steam(
     let start_dir = exe_path.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
     let app_id_32 = steam_shortcuts_util::app_id_generator::calculate_app_id(&exe_str, &name);
     let app_id_64 = ((app_id_32 as u64) << 32) | 0x02000000;
-    let mut userdata_dirs = Vec::new();
+    let mut userdata_dirs: Vec<PathBuf> = Vec::new();
     #[cfg(target_os = "linux")]
     {
         if let Ok(home) = std::env::var("HOME") {
@@ -1708,6 +1708,13 @@ async fn add_to_steam(
     #[cfg(target_os = "windows")]
     {
         userdata_dirs.push(PathBuf::from("C:\\Program Files (x86)\\Steam\\userdata"));
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(home) = std::env::var("HOME") {
+            let h = PathBuf::from(home);
+            userdata_dirs.push(h.join("Library/Application Support/Steam/userdata"));
+        }
     }
 
     let valid_userdata_dirs: Vec<PathBuf> = userdata_dirs.into_iter().filter(|d| d.exists()).collect();
