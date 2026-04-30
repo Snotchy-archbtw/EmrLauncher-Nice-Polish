@@ -763,6 +763,9 @@ async fn download_and_install(app: AppHandle, state: State<'_, DownloadState>, u
         "Windows64", "Windows64Media", "uid.dat", "username.txt", "settings.dat",
         "servers.dat", "servers.txt", "server.properties", "options.txt", "servers.db",
         "workshop_files.json", "screenshots", "update_timestamp.txt",
+        "profile0.dat", "profile1.dat", "profile2.dat", "profile3.dat",
+        "profile4.dat", "profile5.dat", "profile6.dat", "profile7.dat",
+        "profile8.dat", "profile9.dat", "profile10.dat"
     ].iter().copied().collect();
     if !instance_dir.exists() {
         fs::create_dir_all(&instance_dir).map_err(|e| e.to_string())?;
