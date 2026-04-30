@@ -26,15 +26,14 @@ interface UIContextType {
   onNavigateToMenu: () => void;
   connected: boolean;
   updateMessage: string | null;
+  updateUrl: string | null;
   clearUpdateMessage: () => void;
 }
 const UIContext = createContext<UIContextType | undefined>(undefined);
-
 export const ConfigContext = createContext<ReturnType<typeof useAppConfig> | undefined>(undefined);
 export const AudioContext = createContext<ReturnType<typeof useAudioController> | undefined>(undefined);
 export const GameContext = createContext<ReturnType<typeof useGameManager> | undefined>(undefined);
 export const SkinContext = createContext<ReturnType<typeof useSkinSync> | undefined>(undefined);
-
 export function LauncherProvider({ children }: { children: React.ReactNode }) {
   const [showIntro, setShowIntro] = useState(true);
   const [logoAnimDone, setLogoAnimDone] = useState(false);
@@ -44,7 +43,7 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
   const [showCredits, setShowCredits] = useState(false);
   const [focusSection, setFocusSection] = useState<"menu" | "skin">("menu");
 
-  const { updateMessage, clearUpdateMessage } = useUpdateCheck();
+  const { updateMessage, updateUrl, clearUpdateMessage } = useUpdateCheck();
 
   const configRaw = useAppConfig();
   const gameRaw = useGameManager({
@@ -181,8 +180,8 @@ export function LauncherProvider({ children }: { children: React.ReactNode }) {
     isWindowVisible,
     showCredits, setShowCredits, focusSection, setFocusSection,
     onNavigateToSkin, onNavigateToMenu, connected,
-    updateMessage, clearUpdateMessage
-  }), [activeView, showIntro, logoAnimDone, isUiHidden, isWindowVisible, showCredits, focusSection, onNavigateToSkin, onNavigateToMenu, connected, updateMessage, clearUpdateMessage]);
+    updateMessage, updateUrl, clearUpdateMessage
+  }), [activeView, showIntro, logoAnimDone, isUiHidden, isWindowVisible, showCredits, focusSection, onNavigateToSkin, onNavigateToMenu, connected, updateMessage, updateUrl, clearUpdateMessage]);
 
   return (
     <UIContext.Provider value={uiValue}>

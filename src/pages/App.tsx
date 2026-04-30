@@ -45,6 +45,7 @@ export default function App() {
     focusSection,
     onNavigateToMenu,
     updateMessage,
+    updateUrl,
     clearUpdateMessage,
   } = useUI();
   const config = useConfig();
@@ -159,7 +160,7 @@ export default function App() {
           message={updateMessage}
           onClose={clearUpdateMessage}
           onClick={() =>
-            TauriService.openUrl("https://github.com/LCE-Hub/LCE-Emerald-Launcher/releases/latest")
+            TauriService.openUrl(updateUrl || "https://github.com/LCE-Hub/LCE-Emerald-Launcher/releases/latest")
           }
           title="Update Available!"
           variant="update"
