@@ -21,7 +21,7 @@ const BASE_EDITIONS = [
     id: "legacy_evolved", //neo: yes. we're not changing the ID. that will break user data.
     name: "neoLegacy",
     desc: "Backporting newer title updates and Minigames back to LCE",
-    url: "https://github.com/pieeebot/neoLegacy/releases/download/Nightly/neoLegacyWindows64.zip",
+    url: "https://github.com/pieeebot/neoLegacy/releases/download/Stable/neoLegacyWindows64.zip",
     titleImage: "/images/minecraft_title_neoLegacy.png",
     supportsSlimSkins: true,
     logo: "/images/neoLegacy.png"
