@@ -14,6 +14,7 @@ use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use tauri_plugin_opener::OpenerExt;
 use serde::{Deserialize, Serialize};
+use base64::{Engine as _, engine::general_purpose};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct McServer {
@@ -1683,18 +1684,18 @@ fn delete_screenshot(path: String) -> Result<(), String> {
 
 #[tauri::command]
 async fn add_to_steam(
-    app: AppHandle,
+    _app: AppHandle,
     instance_id: String,
     name: String,
-    title_image: String,
-    panorama_image: String,
+    title_base64: String,
+    panorama_base64: String,
 ) -> Result<(), String> {
     let exe_path = std::env::current_exe().map_err(|e| e.to_string())?;
     let exe_str = exe_path.to_string_lossy().to_string();
     let launch_options = format!("\"{}\"", instance_id);
     let start_dir = exe_path.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
     let app_id_32 = steam_shortcuts_util::app_id_generator::calculate_app_id(&exe_str, &name);
-    let app_id_64 = ((app_id_32 as u64) << 32) | 0x02000000;
+    //let app_id_64 = ((app_id_32 as u64) << 32) | 0x02000000; //neo: just in case we'll need later.
     let mut userdata_dirs: Vec<PathBuf> = Vec::new();
     #[cfg(target_os = "linux")]
     {
@@ -1707,6 +1708,7 @@ async fn add_to_steam(
     }
     #[cfg(target_os = "windows")]
     {
+        userdata_dirs.push(PathBuf::from("C:\\Program Files\\Steam\\userdata"));
         userdata_dirs.push(PathBuf::from("C:\\Program Files (x86)\\Steam\\userdata"));
     }
     #[cfg(target_os = "macos")]
@@ -1729,7 +1731,6 @@ async fn add_to_steam(
                 let user_config_dir = entry.path().join("config");
                 let shortcuts_path = user_config_dir.join("shortcuts.vdf");
                 if !user_config_dir.exists() { continue; }
-
                 let content = if shortcuts_path.exists() {
                     fs::read(&shortcuts_path).unwrap_or_default()
                 } else {
@@ -1743,7 +1744,6 @@ async fn add_to_steam(
                 };
 
                 let mut owned_shortcuts: Vec<steam_shortcuts_util::shortcut::ShortcutOwned> = shortcuts.iter().map(|s| s.to_owned()).collect();
-
                 if owned_shortcuts.iter().any(|s| s.app_name == name && s.exe == exe_str) {
                     continue;
                 }
@@ -1777,27 +1777,13 @@ async fn add_to_steam(
                 }
 
                 if grid_dir.exists() {
-                    let resource_dir = app.path().resource_dir().unwrap_or_default();
-                    let resolve_image_path = |p: &str| {
-                        if p.starts_with('/') {
-                            resource_dir.join(&p[1..])
-                        } else {
-                            PathBuf::from(p)
-                        }
-                    };
-
-                    let title_path = resolve_image_path(&title_image);
-                    let panorama_path = resolve_image_path(&panorama_image);
-                    if let Ok(img_data) = fs::read(&title_path) {
-                        let _ = fs::write(grid_dir.join(format!("{}p.png", app_id_64)), &img_data);
-                    }
-                    if let Ok(img_data) = fs::read(&panorama_path) {
-                        let _ = fs::write(grid_dir.join(format!("{}_hero.png", app_id_64)), &img_data);
-                        let _ = fs::write(grid_dir.join(format!("{}.png", app_id_64)), &img_data);
-                    }
-                    if let Ok(img_data) = fs::read(&title_path) {
-                        let _ = fs::write(grid_dir.join(format!("{}_logo.png", app_id_64)), &img_data);
-                    }
+                    let panorama_data = general_purpose::STANDARD.decode(panorama_base64.clone()).map_err(|e| e.to_string())?;
+                    let title_data = general_purpose::STANDARD.decode(title_base64.clone()).map_err(|e| e.to_string())?;
+                    let _ = fs::write(grid_dir.join(format!("{}p.png", app_id_32)), &panorama_data);
+                    let _ = fs::write(grid_dir.join(format!("{}_hero.png", app_id_32)), &panorama_data);
+                    let _ = fs::write(grid_dir.join(format!("{}.png", app_id_32)), &panorama_data);
+                    let _ = fs::write(grid_dir.join(format!("{}_logo.png", app_id_32)), &title_data);
+                    let _ = fs::write(grid_dir.join(format!("{}.json", app_id_32)), "{\"nVersion\":1,\"logoPosition\":{\"pinnedPosition\":\"CenterCenter\",\"nWidthPct\":50,\"nHeightPct\":50}}".as_bytes()); //neo: if you're confused, this is for logo position
                 }
             }
         }

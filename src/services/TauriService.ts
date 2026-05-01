@@ -230,9 +230,9 @@ export class TauriService {
   static async addToSteam(
     instanceId: string,
     name: string,
-    titleImage: string,
-    panoramaImage: string
+    titleBase64: string,
+    panoramaBase64: string
   ): Promise<void> {
-    return invoke("add_to_steam", { instanceId, name, titleImage, panoramaImage });
+    return invoke("add_to_steam", { instanceId, name, titleBase64, panoramaBase64 });
   }
 }
