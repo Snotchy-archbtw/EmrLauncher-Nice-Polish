@@ -1,7 +1,33 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+use steamworks::{Client, FriendFlags, AppId};
+fn list_steam_friends() {
+    match Client::init() {
+        Ok(client) => {
+            println!("[Emerald.Test] Steamworks initialized successfully!");
+            let utils = client.utils();
+            println!("[Emerald.Test] AppId: {:?}", utils.app_id());
+            let friends = client.friends();
+            let friends_list = friends.get_friends(FriendFlags::IMMEDIATE);
+            println!("[Emerald.Test] Steam Friends:");
+            if friends_list.is_empty() {
+                println!("[Emerald.Test] no friends found (or Steam hasnt cached them yet).");
+            }
+
+            for friend in friends_list {
+                println!("  - Name: {} | {:?}", friend.name(), friend.id());
+            }
+        }
+        Err(e) => {
+            eprintln!("[Emerald.Test] failed to initialize Steamworks: {}", e);
+            eprintln!("[Emerald.Test] check if Steam is open and steam_appid.txt is 480");
+        }
+    }
+}
+
 
 fn main() {
+    list_steam_friends(); //neo: dont remove unless Workshop Update has been released.
     #[cfg(target_os = "linux")]
     {
         use std::env;
