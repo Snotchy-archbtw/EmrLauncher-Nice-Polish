@@ -1,6 +1,6 @@
 <div align="center">
   <img height="150" src="https://raw.githubusercontent.com/LCE-Hub/LCE-Emerald-Launcher/refs/heads/main/public/images/icon.png" alt="LCE Emerald Launcher Logo">
-  <h1>LCE Emerald Launcher</h1>
+  <h1>LCE Emerald Launcher Yo where you keeping the splash text's?</h1>
   <p><strong>FOSS cross-platform launcher for Minecraft Legacy Console Edition</strong></p>
   <p>
     <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version">
